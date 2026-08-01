@@ -115,6 +115,23 @@ def grafik_ciz(sembol, start, end, interval="5m"):
             bgcolor="#161b22", bordercolor="#333333", borderpad=6,
         )],
         newshape=dict(line_color="#ffab00", line_width=2),
+        dragmode="pan",
+        hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="#161b22",
+            bordercolor="#333333",
+            font=dict(size=12, family="monospace", color="#ffffff"),
+        ),
+    )
+
+    fig.update_xaxes(
+        spikemode="across", spikethickness=1,
+        spikecolor="#555555", spikedash="dot",
+    )
+    fig.update_yaxes(
+        spikemode="across", spikethickness=1,
+        spikecolor="#555555", spikedash="dot",
+        fixedrange=False,
     )
 
     for ax in ["xaxis", "xaxis2", "yaxis", "yaxis2"]:
