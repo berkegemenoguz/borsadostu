@@ -65,6 +65,13 @@ def grafik_ciz(sembol, start, end, interval="5m"):
         name="Fiyat",
     ), row=1, col=1)
 
+    fig.add_trace(go.Scatter(
+        x=df["Datetime"], y=(df["High"] + df["Low"]) / 2,
+        mode="markers", marker=dict(size=12, opacity=0),
+        showlegend=False, hoverinfo="skip", name="_click_helper",
+        customdata=df[["High", "Low"]].values.tolist(),
+    ), row=1, col=1)
+
     fig.add_trace(go.Bar(
         x=df["Datetime"], y=df["Volume"],
         marker_color=hacim_renk, opacity=0.8,
@@ -129,9 +136,76 @@ def grafik_ciz(sembol, start, end, interval="5m"):
             "scrollZoom": True,
             "displaylogo": False,
         },
-        post_script='document.querySelector(".modebar").style.transform="scale(1.5)";'
-                    'document.querySelector(".modebar").style.transformOrigin="top right";',
     )
+
+    ek_script = """<script>
+window.addEventListener("load", function(){
+  var mb = document.querySelector(".modebar");
+  if(mb){ mb.style.transform="scale(1.5)"; mb.style.transformOrigin="top right"; }
+
+  var fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0];
+  var fibColors = ["#ef5350","#ff9800","#ffeb3b","#4caf50","#2196f3","#9c27b0","#26a69a"];
+  var clicks = [];
+  var gd = document.querySelector(".js-plotly-plot");
+  if(!gd) return;
+
+  var btn = document.createElement("a");
+  btn.className = "modebar-btn";
+  btn.setAttribute("data-title","Fibonacci Ciz");
+  btn.style.cssText = "cursor:pointer;font-weight:bold;color:#ffab00;font-size:14px;padding:4px 8px;";
+  btn.textContent = "Fib";
+  btn.onclick = function(){
+    clicks = [];
+    var shapes = (gd.layout.shapes||[]).filter(function(s){return !s._fib;});
+    var annots = (gd.layout.annotations||[]).filter(function(a){return !a._fib;});
+    Plotly.relayout(gd, {shapes:shapes, annotations:annots});
+    btn.style.color = "#ff5722";
+    btn.textContent = "Fib: tepe sec";
+    gd._fibMode = true;
+  };
+  var group = document.querySelector(".modebar-group");
+  if(group) group.appendChild(btn);
+
+  gd.on("plotly_click", function(data){
+    if(!gd._fibMode) return;
+    var pt = data.points[0];
+    if(pt.curveNumber > 1) return;
+    var yVal = pt.y != null ? pt.y : (pt.close != null ? pt.close : pt.high);
+    if(yVal == null || isNaN(yVal)) return;
+    clicks.push(yVal);
+    if(clicks.length === 1){
+      btn.textContent = "Fib: dip sec";
+    }
+    if(clicks.length === 2){
+      gd._fibMode = false;
+      btn.style.color = "#ffab00";
+      btn.textContent = "Fib";
+      var high = Math.max(clicks[0], clicks[1]);
+      var low = Math.min(clicks[0], clicks[1]);
+      var diff = high - low;
+      var shapes = gd.layout.shapes ? gd.layout.shapes.slice() : [];
+      var annots = gd.layout.annotations ? gd.layout.annotations.slice() : [];
+      for(var i=0; i<fibLevels.length; i++){
+        var yVal = high - diff * fibLevels[i];
+        shapes.push({type:"line", x0:0, x1:1, xref:"paper", y0:yVal, y1:yVal,
+          yref:"y", line:{color:fibColors[i], width:1.5, dash:"dot"}, opacity:0.8, _fib:true});
+        annots.push({x:0.01, xref:"paper", y:yVal, yref:"y",
+          text:(fibLevels[i]*100).toFixed(1)+"% "+yVal.toFixed(2),
+          showarrow:false, font:{color:fibColors[i], size:10, family:"monospace"},
+          bgcolor:"rgba(13,17,23,0.8)", borderpad:2, xanchor:"left", _fib:true});
+      }
+      Plotly.relayout(gd, {shapes:shapes, annotations:annots});
+      clicks = [];
+    }
+  });
+});
+</script></body>"""
+
+    with open(grafik_yolu, "r", encoding="utf-8") as f:
+        html = f.read()
+    html = html.replace("</body>", ek_script)
+    with open(grafik_yolu, "w", encoding="utf-8") as f:
+        f.write(html)
     print(f"  Grafik kaydedildi: {grafik_yolu}")
     webbrowser.open(f"file://{grafik_yolu}")
 
