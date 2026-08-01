@@ -88,10 +88,12 @@ def detay_goster(sembol):
 
     grafik_sec = input("\n  Grafik görmek ister misiniz? (e/h): ").strip().lower()
     if grafik_sec == "e":
-        bugun = date.today().isoformat()
-        start = input(f"  Başlangıç tarihi (YYYY-MM-DD) [{bugun}]: ").strip() or bugun
-        end = input(f"  Bitiş tarihi (YYYY-MM-DD) [{bugun}]: ").strip() or bugun
-        interval = input(f"  Interval (5m/15m/1h) [5m]: ").strip() or "5m"
+        varsayilan_start = "2026-06-07"
+        varsayilan_end = "2026-07-07"
+        varsayilan_interval = "5m"
+        start = input(f"  Başlangıç tarihi (YYYY-MM-DD) [{varsayilan_start}]: ").strip() or varsayilan_start
+        end = input(f"  Bitiş tarihi (YYYY-MM-DD) [{varsayilan_end}]: ").strip() or varsayilan_end
+        interval = input(f"  Interval (5m/15m/1h) [{varsayilan_interval}]: ").strip() or varsayilan_interval
         try:
             grafik_ciz(sembol, start, end, interval)
         except Exception as e:
@@ -106,7 +108,7 @@ def main():
         return
 
     while True:
-        secim = input("\nDetay için hisse kodu girin (çıkış: q): ").strip().upper()
+        secim = input("\nDetay için hisse kodu girin (çıkış: q) [THYAO]: ").strip().upper() or "THYAO"
 
         if secim == "Q":
             print("Çıkış yapılıyor.")

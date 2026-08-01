@@ -149,22 +149,45 @@ window.addEventListener("load", function(){
   var gd = document.querySelector(".js-plotly-plot");
   if(!gd) return;
 
-  var btn = document.createElement("a");
-  btn.className = "modebar-btn";
-  btn.setAttribute("data-title","Fibonacci Ciz");
-  btn.style.cssText = "cursor:pointer;font-weight:bold;color:#ffab00;font-size:14px;padding:4px 8px;";
-  btn.textContent = "Fib";
-  btn.onclick = function(){
+  var dropdown = document.createElement("div");
+  dropdown.style.cssText = "position:relative;display:inline-block;";
+
+  var toggle = document.createElement("a");
+  toggle.className = "modebar-btn";
+  toggle.setAttribute("data-title","Araclar");
+  toggle.style.cssText = "cursor:pointer;font-weight:bold;color:#ffab00;font-size:14px;padding:4px 8px;user-select:none;";
+  toggle.textContent = "Araçlar ▾";
+
+  var menu = document.createElement("div");
+  menu.style.cssText = "display:none;position:absolute;right:0;top:100%;background:#161b22;border:1px solid #333;border-radius:4px;min-width:140px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.5);";
+
+  var fibBtn = document.createElement("a");
+  fibBtn.style.cssText = "display:block;padding:8px 12px;color:#ffab00;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
+  fibBtn.textContent = "Fibonacci Çiz";
+  fibBtn.onmouseenter = function(){ fibBtn.style.background="#1e2a38"; };
+  fibBtn.onmouseleave = function(){ fibBtn.style.background="transparent"; };
+  fibBtn.onclick = function(){
+    menu.style.display = "none";
     clicks = [];
     var shapes = (gd.layout.shapes||[]).filter(function(s){return !s._fib;});
     var annots = (gd.layout.annotations||[]).filter(function(a){return !a._fib;});
     Plotly.relayout(gd, {shapes:shapes, annotations:annots});
-    btn.style.color = "#ff5722";
-    btn.textContent = "Fib: tepe sec";
+    toggle.style.color = "#ff5722";
+    toggle.textContent = "Fib: tepe seç";
     gd._fibMode = true;
   };
+  menu.appendChild(fibBtn);
+
+  toggle.onclick = function(e){
+    e.stopPropagation();
+    menu.style.display = menu.style.display === "none" ? "block" : "none";
+  };
+  document.addEventListener("click", function(){ menu.style.display = "none"; });
+
+  dropdown.appendChild(toggle);
+  dropdown.appendChild(menu);
   var group = document.querySelector(".modebar-group");
-  if(group) group.appendChild(btn);
+  if(group) group.appendChild(dropdown);
 
   gd.on("plotly_click", function(data){
     if(!gd._fibMode) return;
@@ -174,12 +197,12 @@ window.addEventListener("load", function(){
     if(yVal == null || isNaN(yVal)) return;
     clicks.push(yVal);
     if(clicks.length === 1){
-      btn.textContent = "Fib: dip sec";
+      toggle.textContent = "Fib: dip seç";
     }
     if(clicks.length === 2){
       gd._fibMode = false;
-      btn.style.color = "#ffab00";
-      btn.textContent = "Fib";
+      toggle.style.color = "#ffab00";
+      toggle.textContent = "Araçlar ▾";
       var high = Math.max(clicks[0], clicks[1]);
       var low = Math.min(clicks[0], clicks[1]);
       var diff = high - low;
