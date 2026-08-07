@@ -1,6 +1,5 @@
 __pycache__/
 .venv/
-grafikler/
 .claude/
 *.pyc
 .DS_Store

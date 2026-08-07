@@ -1,7 +1,7 @@
 import borsapy as bp
 import pandas as pd
 from datetime import date
-from graphicgenerator import grafik_ciz
+from graphicgenerator import grafik_ciz_html
 
 
 def bist_sirketler():
@@ -127,7 +127,7 @@ def detay_goster(sembol):
         end = input(f"  Bitiş tarihi (YYYY-MM-DD) [{varsayilan_end}]: ").strip() or varsayilan_end
         interval = input(f"  Interval (5m/15m/1h) [{varsayilan_interval}]: ").strip() or varsayilan_interval
         try:
-            grafik_ciz(sembol, start, end, interval)
+            grafik_ciz_html(sembol, start, end, interval)
         except Exception as e:
             print(f"  Grafik oluşturulamadı: {e}")
 

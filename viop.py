@@ -3,7 +3,7 @@ import pandas as pd
 import re
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from graphicgenerator import grafik_ciz
+from graphicgenerator import grafik_ciz_html
 
 AY_MAP = {
     "01": "F", "02": "G", "03": "H", "04": "J", "05": "K", "06": "M",
@@ -162,7 +162,7 @@ def detay_goster(base, tum_df):
         end = input(f"  Bitiş tarihi (YYYY-MM-DD) [{bugun}]: ").strip() or bugun
         interval = input(f"  Interval (5m/15m/1h) [5m]: ").strip() or "5m"
         try:
-            grafik_ciz(secilen, start, end, interval)
+            grafik_ciz_html(secilen, start, end, interval)
         except Exception as e:
             print(f"  Grafik oluşturulamadı: {e}")
 

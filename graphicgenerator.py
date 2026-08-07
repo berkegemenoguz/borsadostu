@@ -1,12 +1,7 @@
-import os
-import webbrowser
 import borsapy as bp
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
-
-GRAFIK_KLASORU = os.path.join(os.path.dirname(os.path.abspath(__file__)), "grafikler")
-os.makedirs(GRAFIK_KLASORU, exist_ok=True)
 
 
 def hacim_format(v):
@@ -253,34 +248,3 @@ def grafik_ciz_html(sembol, start, end, interval="5m"):
     return chart_div + FIB_SCRIPT_EMBED
 
 
-def grafik_ciz(sembol, start, end, interval="5m"):
-    fig = _build_figure(sembol, start, end, interval)
-    if fig is None:
-        print(f"  '{sembol}' için veri bulunamadı.")
-        return
-
-    grafik_adi = f"Z{sembol}_{start}_{end}.html"
-    grafik_yolu = os.path.join(GRAFIK_KLASORU, grafik_adi)
-
-    fig.write_html(grafik_yolu, config=PLOTLY_CONFIG)
-
-    fib_standalone = FIB_SCRIPT_EMBED.replace(
-        'document.getElementById("grafik-container")',
-        'document.querySelector(".js-plotly-plot")',
-    ) + "</body>"
-
-    with open(grafik_yolu, "r", encoding="utf-8") as f:
-        html = f.read()
-    html = html.replace("</body>", fib_standalone)
-    with open(grafik_yolu, "w", encoding="utf-8") as f:
-        f.write(html)
-    print(f"  Grafik kaydedildi: {grafik_yolu}")
-    webbrowser.open(f"file://{grafik_yolu}")
-
-
-if __name__ == "__main__":
-    sembol = input("Hisse kodu: ").strip().upper()
-    start = input("Başlangıç tarihi (YYYY-MM-DD): ").strip()
-    end = input("Bitiş tarihi (YYYY-MM-DD): ").strip()
-    interval = input("Interval (5m/15m/1h) [5m]: ").strip() or "5m"
-    grafik_ciz(sembol, start, end, interval)
