@@ -139,6 +139,13 @@
 
         .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
 
+        .lang-switch { display: flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: #8b949e; }
+        .lang-switch span { cursor: pointer; }
+        .lang-switch span.active { color: #f0f6fc; font-weight: 600; }
+        .lang-toggle { position: relative; width: 36px; height: 18px; background: #30363d; border-radius: 9px; cursor: pointer; border: none; padding: 0; }
+        .lang-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #58a6ff; border-radius: 50%; transition: transform 0.2s; }
+        .lang-toggle.en::after { transform: translateX(18px); }
+
         .loading-overlay {
             display: none;
             position: fixed;
@@ -176,10 +183,15 @@
         <a href="/" class="brand">Borsa Dostu</a>
         <a href="/bist">BIST</a>
         <a href="/viop">VIOP</a>
+        <div class="lang-switch">
+            <span class="{{ 'active' if lang == 'tr' }}" onclick="window.location='/lang/tr'">TR</span>
+            <button class="lang-toggle {{ lang }}" onclick="window.location='/lang/{{ 'tr' if lang == 'en' else 'en' }}'"></button>
+            <span class="{{ 'active' if lang == 'en' }}" onclick="window.location='/lang/en'">EN</span>
+        </div>
     </nav>
     <div class="loading-overlay" id="loading">
         <div class="spinner-candle"><div class="c1"></div><div class="c2"></div><div class="c3"></div><div class="c4"></div><div class="c5"></div></div>
-        <div class="loading-text">Loading data...</div>
+        <div class="loading-text">{{ t.loading }}</div>
     </div>
     <div class="container">
         {% block content %}{% endblock %}

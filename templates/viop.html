@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block title %}VIOP — Borsa Dostu{% endblock %}
 {% block content %}
-<h1>VIOP Stock Futures <span style="color:#8b949e; font-size:16px; font-weight:400;">{{ count }} stocks</span></h1>
+<h1>{{ t.viop_title }} <span style="color:#8b949e; font-size:16px; font-weight:400;">{{ count }} {{ t.stocks }}</span></h1>
 <div style="overflow-x:auto;">
     <table>
         <thead>
             <tr>
                 <th style="width:50px;">#</th>
-                <th>Stock</th>
-                <th class="text-right">Contracts</th>
-                <th class="text-right">Total Volume</th>
+                <th>{{ t.stock }}</th>
+                <th class="text-right">{{ t.contracts }}</th>
+                <th class="text-right">{{ t.total_volume }}</th>
             </tr>
         </thead>
         <tbody>

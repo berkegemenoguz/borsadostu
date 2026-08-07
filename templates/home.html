@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Borsa Dostu — Stock Market Analysis{% endblock %}
+{% block title %}{{ t.site_name }} — {{ t.subtitle }}{% endblock %}
 {% block content %}
 <div style="text-align:center; padding:40px 0 30px;">
-    <h1 style="font-size:32px; margin-bottom:8px;">Borsa Dostu</h1>
-    <p style="color:#8b949e; font-size:16px;">Turkish Stock Market Analysis Tool</p>
+    <h1 style="font-size:32px; margin-bottom:8px;">{{ t.site_name }}</h1>
+    <p style="color:#8b949e; font-size:16px;">{{ t.subtitle }}</p>
 </div>
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:700px; margin:0 auto;">
     <a href="/bist" class="card" style="text-decoration:none; text-align:center;">
         <div style="font-size:36px; margin-bottom:12px;">📈</div>
         <h2>BIST</h2>
-        <p style="color:#8b949e; font-size:14px;">Borsa Istanbul equities — company list, price data, and interactive charts</p>
+        <p style="color:#8b949e; font-size:14px;">{{ t.bist_desc }}</p>
     </a>
     <a href="/viop" class="card" style="text-decoration:none; text-align:center;">
         <div style="font-size:36px; margin-bottom:12px;">📊</div>
         <h2>VIOP</h2>
-        <p style="color:#8b949e; font-size:14px;">Futures market — stock futures contracts, volume data, and charts</p>
+        <p style="color:#8b949e; font-size:14px;">{{ t.viop_desc }}</p>
     </a>
 </div>
 {% endblock %}

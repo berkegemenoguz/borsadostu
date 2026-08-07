@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block title %}BIST — Borsa Dostu{% endblock %}
 {% block content %}
-<h1>BIST Equities <span style="color:#8b949e; font-size:16px; font-weight:400;">{{ count }} companies</span></h1>
-<input type="text" class="search-box" id="search" placeholder="Search ticker or company..." oninput="filterTable()">
+<h1>{{ t.bist_title }} <span style="color:#8b949e; font-size:16px; font-weight:400;">{{ count }} {{ t.companies }}</span></h1>
+<input type="text" class="search-box" id="search" placeholder="{{ t.search_placeholder }}" oninput="filterTable()">
 <div style="overflow-x:auto;">
     <table id="company-table">
         <thead>
             <tr>
                 <th style="width:50px;">#</th>
-                <th style="width:100px;">Ticker</th>
-                <th>Company</th>
+                <th style="width:100px;">{{ t.ticker }}</th>
+                <th>{{ t.company }}</th>
             </tr>
         </thead>
         <tbody>

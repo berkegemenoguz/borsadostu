@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ sembol }} — Borsa Dostu{% endblock %}
 {% block content %}
-<h1>{{ sembol }} <a href="/bist" style="font-size:14px; font-weight:400;">← Back to list</a></h1>
+<h1>{{ sembol }} <a href="/bist" style="font-size:14px; font-weight:400;">← {{ t.back_to_list }}</a></h1>
 
 {% if veri.hata %}
 <div class="error">{{ veri.hata }}</div>
@@ -13,34 +13,34 @@
 {% set fi = veri.fast_info %}
 <div class="info-grid">
     <div class="info-item">
-        <div class="label">Price</div>
+        <div class="label">{{ t.price }}</div>
         <div class="value">{{ "%.2f"|format(info.get("last", 0)) }} TL</div>
     </div>
     <div class="info-item">
-        <div class="label">Change</div>
+        <div class="label">{{ t.change }}</div>
         <div class="value {{ 'green' if pos else 'red' }}">
             {{ "▲" if pos else "▼" }}{{ "%.2f"|format(info.get("change_percent", 0)|abs) }}%
         </div>
     </div>
     <div class="info-item">
-        <div class="label">Volume</div>
+        <div class="label">{{ t.volume }}</div>
         <div class="value mono">{{ "{:,.0f}".format(info.get("volume", 0)) }}</div>
     </div>
     <div class="info-item">
-        <div class="label">Open</div>
+        <div class="label">{{ t.open }}</div>
         <div class="value mono">{{ "%.2f"|format(info.get("open", 0)) }}</div>
     </div>
     <div class="info-item">
-        <div class="label">High</div>
+        <div class="label">{{ t.high }}</div>
         <div class="value mono green">{{ "%.2f"|format(info.get("high", 0)) }}</div>
     </div>
     <div class="info-item">
-        <div class="label">Low</div>
+        <div class="label">{{ t.low }}</div>
         <div class="value mono red">{{ "%.2f"|format(info.get("low", 0)) }}</div>
     </div>
     {% if fi and fi.market_cap and fi.market_cap > 0 %}
     <div class="info-item">
-        <div class="label">Market Cap</div>
+        <div class="label">{{ t.market_cap }}</div>
         <div class="value mono">
             {% if fi.market_cap >= 1e12 %}{{ "%.1fT"|format(fi.market_cap / 1e12) }}
             {% elif fi.market_cap >= 1e9 %}{{ "%.1fB"|format(fi.market_cap / 1e9) }}
@@ -49,27 +49,27 @@
     </div>
     {% endif %}
     <div class="info-item">
-        <div class="label">P/E Ratio</div>
+        <div class="label">{{ t.pe_ratio }}</div>
         <div class="value mono">{{ "%.1f"|format(fi.pe_ratio) if fi and fi.pe_ratio else "—" }}</div>
     </div>
     <div class="info-item">
-        <div class="label">P/B Ratio</div>
+        <div class="label">{{ t.pb_ratio }}</div>
         <div class="value mono">{{ "%.1f"|format(fi.pb_ratio) if fi and fi.pb_ratio else "—" }}</div>
     </div>
     <div class="info-item">
-        <div class="label">52W High</div>
+        <div class="label">{{ t.week52_high }}</div>
         <div class="value mono green">{{ "%.2f"|format(fi.year_high) if fi else "—" }}</div>
     </div>
     <div class="info-item">
-        <div class="label">52W Low</div>
+        <div class="label">{{ t.week52_low }}</div>
         <div class="value mono red">{{ "%.2f"|format(fi.year_low) if fi else "—" }}</div>
     </div>
     <div class="info-item">
-        <div class="label">Dividend Yield</div>
+        <div class="label">{{ t.dividend_yield }}</div>
         <div class="value mono">{{ "%.2f%%"|format(info.get("dividendYield", 0) or 0) }}</div>
     </div>
     <div class="info-item">
-        <div class="label">Net Debt</div>
+        <div class="label">{{ t.net_debt }}</div>
         <div class="value mono">
             {% set nd = info.get("netDebt", 0) or 0 %}
             {% if nd >= 1e12 or nd <= -1e12 %}{{ "%.1fT"|format(nd / 1e12) }}
@@ -79,33 +79,33 @@
         </div>
     </div>
     <div class="info-item">
-        <div class="label">EV/EBITDA</div>
+        <div class="label">{{ t.ev_ebitda }}</div>
         <div class="value mono">{{ "%.1f"|format(info.get("enterpriseToEbitda", 0) or 0) if info.get("enterpriseToEbitda") else "—" }}</div>
     </div>
 </div>
 {% endif %}
 
 <div class="card">
-    <h2>Chart</h2>
+    <h2>{{ t.chart }}</h2>
     <form method="get" action="/bist/{{ sembol }}">
         <div class="form-row">
             <div class="form-group">
-                <label>Start Date</label>
+                <label>{{ t.start_date }}</label>
                 <input type="date" name="start" value="{{ start }}">
             </div>
             <div class="form-group">
-                <label>End Date</label>
+                <label>{{ t.end_date }}</label>
                 <input type="date" name="end" value="{{ end }}">
             </div>
             <div class="form-group">
-                <label>Interval</label>
+                <label>{{ t.interval }}</label>
                 <select name="interval">
                     <option value="5m" {{ 'selected' if interval == '5m' }}>5m</option>
                     <option value="15m" {{ 'selected' if interval == '15m' }}>15m</option>
                     <option value="1h" {{ 'selected' if interval == '1h' }}>1h</option>
                 </select>
             </div>
-            <button type="submit" class="btn">Generate</button>
+            <button type="submit" class="btn">{{ t.generate }}</button>
         </div>
     </form>
 
@@ -118,17 +118,17 @@
 
 {% if history %}
 <div class="card">
-    <h2>Hourly Data <span style="color:#8b949e; font-size:14px; font-weight:400;">(last 20)</span></h2>
+    <h2>{{ t.hourly_data }} <span style="color:#8b949e; font-size:14px; font-weight:400;">({{ t.last_20 }})</span></h2>
     <div style="overflow-x:auto;">
         <table>
             <thead>
                 <tr>
-                    <th>Date/Time</th>
-                    <th class="text-right">Open</th>
-                    <th class="text-right">High</th>
-                    <th class="text-right">Low</th>
-                    <th class="text-right">Close</th>
-                    <th class="text-right">Volume</th>
+                    <th>{{ t.date_time }}</th>
+                    <th class="text-right">{{ t.open }}</th>
+                    <th class="text-right">{{ t.high }}</th>
+                    <th class="text-right">{{ t.low }}</th>
+                    <th class="text-right">{{ t.close }}</th>
+                    <th class="text-right">{{ t.volume }}</th>
                 </tr>
             </thead>
             <tbody>
