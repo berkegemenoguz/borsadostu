@@ -72,6 +72,29 @@
 </div>
 {% endif %}
 
+{% if veri.info %}
+<div class="info-grid">
+    <div class="info-item">
+        <div class="label">Dividend Yield</div>
+        <div class="value mono">{{ "%.2f%%"|format(veri.info.get("dividendYield", 0) or 0) }}</div>
+    </div>
+    <div class="info-item">
+        <div class="label">Net Debt</div>
+        <div class="value mono">
+            {% set nd = veri.info.get("netDebt", 0) or 0 %}
+            {% if nd >= 1e12 or nd <= -1e12 %}{{ "%.1fT"|format(nd / 1e12) }}
+            {% elif nd >= 1e9 or nd <= -1e9 %}{{ "%.1fB"|format(nd / 1e9) }}
+            {% elif nd >= 1e6 or nd <= -1e6 %}{{ "%.0fM"|format(nd / 1e6) }}
+            {% else %}{{ "%.0f"|format(nd) }}{% endif %} TL
+        </div>
+    </div>
+    <div class="info-item">
+        <div class="label">EV/EBITDA</div>
+        <div class="value mono">{{ "%.1f"|format(veri.info.get("enterpriseToEbitda", 0) or 0) if veri.info.get("enterpriseToEbitda") else "—" }}</div>
+    </div>
+</div>
+{% endif %}
+
 <div class="card">
     <h2>Chart</h2>
     <form method="get" action="/bist/{{ sembol }}">
