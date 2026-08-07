@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}BIST — Borsa Dostu{% endblock %}
+{% block content %}
+<h1>BIST Equities <span style="color:#8b949e; font-size:16px; font-weight:400;">{{ count }} companies</span></h1>
+<input type="text" class="search-box" id="search" placeholder="Search ticker or company..." oninput="filterTable()">
+<div style="overflow-x:auto;">
+    <table id="company-table">
+        <thead>
+            <tr>
+                <th style="width:50px;">#</th>
+                <th style="width:100px;">Ticker</th>
+                <th>Company</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sirketler %}
+            <tr>
+                <td class="text-center mono">{{ loop.index }}</td>
+                <td><a href="/bist/{{ s.ticker }}" class="mono">{{ s.ticker }}</a></td>
+                <td>{{ s.name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+function filterTable(){
+    var q = document.getElementById("search").value.toUpperCase();
+    var rows = document.querySelectorAll("#company-table tbody tr");
+    rows.forEach(function(row){
+        var text = row.textContent.toUpperCase();
+        row.style.display = text.indexOf(q) > -1 ? "" : "none";
+    });
+}
+</script>
+{% endblock %}

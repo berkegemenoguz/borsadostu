@@ -4,6 +4,38 @@ from datetime import date
 from graphicgenerator import grafik_ciz
 
 
+def bist_sirketler():
+    sirketler = bp.companies()
+    df = pd.DataFrame(sirketler)
+    return df
+
+
+def bist_detay_veri(sembol):
+    result = {"info": None, "fast_info": None, "history": pd.DataFrame(), "hata": None}
+    try:
+        ticker = bp.Ticker(sembol)
+    except Exception:
+        result["hata"] = f"'{sembol}' için veri alınamadı."
+        return result
+
+    try:
+        result["info"] = ticker.info
+    except Exception:
+        pass
+
+    try:
+        result["fast_info"] = ticker.fast_info
+    except Exception:
+        pass
+
+    try:
+        result["history"] = ticker.history(period="5g", interval="1h")
+    except Exception:
+        pass
+
+    return result
+
+
 def bist_ozet_getir():
     print("\n  BIST verileri yükleniyor...")
     sirketler = bp.companies()

@@ -19,13 +19,112 @@ def hacim_format(v):
     return str(int(v))
 
 
-def grafik_ciz(sembol, start, end, interval="5m"):
+PLOTLY_CONFIG = {
+    "modeBarButtons": [
+        ["zoomIn2d", "zoomOut2d"],
+        ["zoom2d", "pan2d", "select2d"],
+        ["drawline", "drawrect", "eraseshape"],
+        ["resetScale2d", "autoScale2d"],
+        ["toImage"],
+    ],
+    "scrollZoom": True,
+    "displaylogo": False,
+}
+
+FIB_SCRIPT_EMBED = """<script>
+(function waitForPlot(){
+  var gd = document.getElementById("grafik-container");
+  if(!gd || !gd.data){ setTimeout(waitForPlot, 200); return; }
+
+  var mb = gd.querySelector(".modebar");
+  if(mb){ mb.style.transform="scale(1.3)"; mb.style.transformOrigin="top right"; }
+
+  var fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0];
+  var fibColors = ["#ef5350","#ff9800","#ffeb3b","#4caf50","#2196f3","#9c27b0","#26a69a"];
+  var clicks = [];
+
+  var dropdown = document.createElement("div");
+  dropdown.style.cssText = "position:relative;display:inline-block;";
+
+  var toggle = document.createElement("a");
+  toggle.className = "modebar-btn";
+  toggle.setAttribute("data-title","Tools");
+  toggle.style.cssText = "cursor:pointer;color:#999;font-size:13px;padding:4px 8px;user-select:none;";
+  toggle.textContent = "Tools ▾";
+
+  var menu = document.createElement("div");
+  menu.style.cssText = "display:none;position:absolute;right:0;top:100%;background:#161b22;border:1px solid #333;border-radius:4px;min-width:140px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.5);";
+
+  var fibBtn = document.createElement("a");
+  fibBtn.style.cssText = "display:block;padding:8px 12px;color:#999;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
+  fibBtn.textContent = "Fibonacci";
+  fibBtn.onmouseenter = function(){ fibBtn.style.background="#1e2a38"; };
+  fibBtn.onmouseleave = function(){ fibBtn.style.background="transparent"; };
+  fibBtn.onclick = function(){
+    menu.style.display = "none";
+    clicks = [];
+    var shapes = (gd.layout.shapes||[]).filter(function(s){return !s._fib;});
+    var annots = (gd.layout.annotations||[]).filter(function(a){return !a._fib;});
+    Plotly.relayout(gd, {shapes:shapes, annotations:annots});
+    toggle.style.color = "#4fc3f7";
+    toggle.textContent = "Fib: pick high";
+    gd._fibMode = true;
+  };
+  menu.appendChild(fibBtn);
+
+  toggle.onclick = function(e){
+    e.stopPropagation();
+    menu.style.display = menu.style.display === "none" ? "block" : "none";
+  };
+  document.addEventListener("click", function(){ menu.style.display = "none"; });
+
+  dropdown.appendChild(toggle);
+  dropdown.appendChild(menu);
+  var group = gd.querySelector(".modebar-group");
+  if(group) group.appendChild(dropdown);
+
+  gd.on("plotly_click", function(data){
+    if(!gd._fibMode) return;
+    var pt = data.points[0];
+    if(pt.curveNumber > 1) return;
+    var yVal = pt.y != null ? pt.y : (pt.close != null ? pt.close : pt.high);
+    if(yVal == null || isNaN(yVal)) return;
+    clicks.push(yVal);
+    if(clicks.length === 1){
+      toggle.textContent = "Fib: pick low";
+    }
+    if(clicks.length === 2){
+      gd._fibMode = false;
+      toggle.style.color = "#999";
+      toggle.textContent = "Tools ▾";
+      var high = Math.max(clicks[0], clicks[1]);
+      var low = Math.min(clicks[0], clicks[1]);
+      var diff = high - low;
+      var shapes = gd.layout.shapes ? gd.layout.shapes.slice() : [];
+      var annots = gd.layout.annotations ? gd.layout.annotations.slice() : [];
+      for(var i=0; i<fibLevels.length; i++){
+        var yVal = high - diff * fibLevels[i];
+        shapes.push({type:"line", x0:0, x1:1, xref:"paper", y0:yVal, y1:yVal,
+          yref:"y", line:{color:fibColors[i], width:1.5, dash:"dot"}, opacity:0.8, _fib:true});
+        annots.push({x:0.01, xref:"paper", y:yVal, yref:"y",
+          text:(fibLevels[i]*100).toFixed(1)+"% "+yVal.toFixed(2),
+          showarrow:false, font:{color:fibColors[i], size:10, family:"monospace"},
+          bgcolor:"rgba(13,17,23,0.8)", borderpad:2, xanchor:"left", _fib:true});
+      }
+      Plotly.relayout(gd, {shapes:shapes, annotations:annots});
+      clicks = [];
+    }
+  });
+})();
+</script>"""
+
+
+def _build_figure(sembol, start, end, interval="5m"):
     hisse = bp.Ticker(sembol)
     df = hisse.history(start=start, end=end, interval=interval)
 
     if df.empty:
-        print(f"  '{sembol}' için veri bulunamadı.")
-        return
+        return None
 
     if df.index.dtype != "int64":
         df["Datetime"] = pd.to_datetime(df.index)
@@ -62,7 +161,7 @@ def grafik_ciz(sembol, start, end, interval="5m"):
         low=df["Low"], close=df["Close"],
         increasing_line_color="#26a69a", increasing_fillcolor="#26a69a",
         decreasing_line_color="#ef5350", decreasing_fillcolor="#ef5350",
-        name="Fiyat",
+        name="Price",
     ), row=1, col=1)
 
     fig.add_trace(go.Scatter(
@@ -75,7 +174,7 @@ def grafik_ciz(sembol, start, end, interval="5m"):
     fig.add_trace(go.Bar(
         x=df["Datetime"], y=df["Volume"],
         marker_color=hacim_renk, opacity=0.8,
-        name="Hacim",
+        name="Volume",
     ), row=2, col=1)
 
     degisim_renk = "#26a69a" if degisim >= 0 else "#ef5350"
@@ -90,22 +189,22 @@ def grafik_ciz(sembol, start, end, interval="5m"):
     degisim_ok = "▲" if degisim >= 0 else "▼"
     fark_isaret = "+" if fark_tl >= 0 else ""
     ozet = (
-        f"Açılış: {acilis:.2f} TL  |  Kapanış: {kapanis:.2f} TL  |  "
-        f"En Yüksek: {en_yuksek:.2f} ({en_yuksek_saat})  |  "
-        f"En Düşük: {en_dusuk:.2f} ({en_dusuk_saat})  |  "
-        f"Fark: {fark_isaret}{fark_tl:.2f} TL  |  "
-        f"Hacim: {hacim_format(toplam_hacim)}  |  "
+        f"Open: {acilis:.2f} TL  |  Close: {kapanis:.2f} TL  |  "
+        f"High: {en_yuksek:.2f} ({en_yuksek_saat})  |  "
+        f"Low: {en_dusuk:.2f} ({en_dusuk_saat})  |  "
+        f"Change: {fark_isaret}{fark_tl:.2f} TL  |  "
+        f"Vol: {hacim_format(toplam_hacim)}  |  "
         f"{degisim_ok} {degisim:+.2f}%"
     )
 
     fig.update_layout(
-        title=f"{sembol}  |  {start} → {end}  |  {interval} mum grafik",
+        title=f"{sembol}  |  {start} → {end}  |  {interval} candlestick",
         plot_bgcolor="#0d1117",
         paper_bgcolor="#0d1117",
         font_color="#aaaaaa",
         xaxis_rangeslider_visible=False,
-        yaxis_title="Fiyat (TL)",
-        yaxis2_title="Hacim",
+        yaxis_title="Price (TL)",
+        yaxis2_title="Volume",
         legend=dict(bgcolor="#161b22", bordercolor="#333333"),
         margin=dict(b=80),
         annotations=[dict(
@@ -137,113 +236,42 @@ def grafik_ciz(sembol, start, end, interval="5m"):
     for ax in ["xaxis", "xaxis2", "yaxis", "yaxis2"]:
         fig.update_layout(**{ax: dict(gridcolor="#1e2a38", zeroline=False)})
 
+    return fig
+
+
+def grafik_ciz_html(sembol, start, end, interval="5m"):
+    fig = _build_figure(sembol, start, end, interval)
+    if fig is None:
+        return None
+
+    chart_div = fig.to_html(
+        full_html=False,
+        include_plotlyjs=False,
+        config=PLOTLY_CONFIG,
+        div_id="grafik-container",
+    )
+    return chart_div + FIB_SCRIPT_EMBED
+
+
+def grafik_ciz(sembol, start, end, interval="5m"):
+    fig = _build_figure(sembol, start, end, interval)
+    if fig is None:
+        print(f"  '{sembol}' için veri bulunamadı.")
+        return
+
     grafik_adi = f"Z{sembol}_{start}_{end}.html"
     grafik_yolu = os.path.join(GRAFIK_KLASORU, grafik_adi)
 
-    fig.write_html(
-        grafik_yolu,
-        config={
-            "modeBarButtons": [
-                ["zoomIn2d", "zoomOut2d"],
-                ["zoom2d", "pan2d", "select2d"],
-                ["drawline", "drawrect", "eraseshape"],
-                ["resetScale2d", "autoScale2d"],
-                ["toImage"],
-            ],
-            "scrollZoom": True,
-            "displaylogo": False,
-        },
-    )
+    fig.write_html(grafik_yolu, config=PLOTLY_CONFIG)
 
-    ek_script = """<script>
-window.addEventListener("load", function(){
-  var mb = document.querySelector(".modebar");
-  if(mb){ mb.style.transform="scale(1.5)"; mb.style.transformOrigin="top right"; }
-
-  var fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0];
-  var fibColors = ["#ef5350","#ff9800","#ffeb3b","#4caf50","#2196f3","#9c27b0","#26a69a"];
-  var clicks = [];
-  var gd = document.querySelector(".js-plotly-plot");
-  if(!gd) return;
-
-  var dropdown = document.createElement("div");
-  dropdown.style.cssText = "position:relative;display:inline-block;";
-
-  var toggle = document.createElement("a");
-  toggle.className = "modebar-btn";
-  toggle.setAttribute("data-title","Araclar");
-  toggle.style.cssText = "cursor:pointer;font-weight:bold;color:#ffab00;font-size:14px;padding:4px 8px;user-select:none;";
-  toggle.textContent = "Araçlar ▾";
-
-  var menu = document.createElement("div");
-  menu.style.cssText = "display:none;position:absolute;right:0;top:100%;background:#161b22;border:1px solid #333;border-radius:4px;min-width:140px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.5);";
-
-  var fibBtn = document.createElement("a");
-  fibBtn.style.cssText = "display:block;padding:8px 12px;color:#ffab00;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
-  fibBtn.textContent = "Fibonacci Çiz";
-  fibBtn.onmouseenter = function(){ fibBtn.style.background="#1e2a38"; };
-  fibBtn.onmouseleave = function(){ fibBtn.style.background="transparent"; };
-  fibBtn.onclick = function(){
-    menu.style.display = "none";
-    clicks = [];
-    var shapes = (gd.layout.shapes||[]).filter(function(s){return !s._fib;});
-    var annots = (gd.layout.annotations||[]).filter(function(a){return !a._fib;});
-    Plotly.relayout(gd, {shapes:shapes, annotations:annots});
-    toggle.style.color = "#ff5722";
-    toggle.textContent = "Fib: tepe seç";
-    gd._fibMode = true;
-  };
-  menu.appendChild(fibBtn);
-
-  toggle.onclick = function(e){
-    e.stopPropagation();
-    menu.style.display = menu.style.display === "none" ? "block" : "none";
-  };
-  document.addEventListener("click", function(){ menu.style.display = "none"; });
-
-  dropdown.appendChild(toggle);
-  dropdown.appendChild(menu);
-  var group = document.querySelector(".modebar-group");
-  if(group) group.appendChild(dropdown);
-
-  gd.on("plotly_click", function(data){
-    if(!gd._fibMode) return;
-    var pt = data.points[0];
-    if(pt.curveNumber > 1) return;
-    var yVal = pt.y != null ? pt.y : (pt.close != null ? pt.close : pt.high);
-    if(yVal == null || isNaN(yVal)) return;
-    clicks.push(yVal);
-    if(clicks.length === 1){
-      toggle.textContent = "Fib: dip seç";
-    }
-    if(clicks.length === 2){
-      gd._fibMode = false;
-      toggle.style.color = "#ffab00";
-      toggle.textContent = "Araçlar ▾";
-      var high = Math.max(clicks[0], clicks[1]);
-      var low = Math.min(clicks[0], clicks[1]);
-      var diff = high - low;
-      var shapes = gd.layout.shapes ? gd.layout.shapes.slice() : [];
-      var annots = gd.layout.annotations ? gd.layout.annotations.slice() : [];
-      for(var i=0; i<fibLevels.length; i++){
-        var yVal = high - diff * fibLevels[i];
-        shapes.push({type:"line", x0:0, x1:1, xref:"paper", y0:yVal, y1:yVal,
-          yref:"y", line:{color:fibColors[i], width:1.5, dash:"dot"}, opacity:0.8, _fib:true});
-        annots.push({x:0.01, xref:"paper", y:yVal, yref:"y",
-          text:(fibLevels[i]*100).toFixed(1)+"% "+yVal.toFixed(2),
-          showarrow:false, font:{color:fibColors[i], size:10, family:"monospace"},
-          bgcolor:"rgba(13,17,23,0.8)", borderpad:2, xanchor:"left", _fib:true});
-      }
-      Plotly.relayout(gd, {shapes:shapes, annotations:annots});
-      clicks = [];
-    }
-  });
-});
-</script></body>"""
+    fib_standalone = FIB_SCRIPT_EMBED.replace(
+        'document.getElementById("grafik-container")',
+        'document.querySelector(".js-plotly-plot")',
+    ) + "</body>"
 
     with open(grafik_yolu, "r", encoding="utf-8") as f:
         html = f.read()
-    html = html.replace("</body>", ek_script)
+    html = html.replace("</body>", fib_standalone)
     with open(grafik_yolu, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"  Grafik kaydedildi: {grafik_yolu}")

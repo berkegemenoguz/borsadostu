@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ sembol }} — Borsa Dostu{% endblock %}
+{% block content %}
+<h1>{{ sembol }} <a href="/bist" style="font-size:14px; font-weight:400;">← Back to list</a></h1>
+
+{% if veri.hata %}
+<div class="error">{{ veri.hata }}</div>
+{% endif %}
+
+{% if veri.info %}
+{% set info = veri.info %}
+{% set pos = info.get("change", 0) >= 0 %}
+<div class="info-grid">
+    <div class="info-item">
+        <div class="label">Price</div>
+        <div class="value">{{ "%.2f"|format(info.get("last", 0)) }} TL</div>
+    </div>
+    <div class="info-item">
+        <div class="label">Change</div>
+        <div class="value {{ 'green' if pos else 'red' }}">
+            {{ "▲" if pos else "▼" }}{{ "%.2f"|format(info.get("change_percent", 0)|abs) }}%
+        </div>
+    </div>
+    <div class="info-item">
+        <div class="label">Volume</div>
+        <div class="value mono">{{ "{:,.0f}".format(info.get("volume", 0)) }}</div>
+    </div>
+    <div class="info-item">
+        <div class="label">Open</div>
+        <div class="value mono">{{ "%.2f"|format(info.get("open", 0)) }}</div>
+    </div>
+    <div class="info-item">
+        <div class="label">High</div>
+        <div class="value mono green">{{ "%.2f"|format(info.get("high", 0)) }}</div>
+    </div>
+    <div class="info-item">
+        <div class="label">Low</div>
+        <div class="value mono red">{{ "%.2f"|format(info.get("low", 0)) }}</div>
+    </div>
+</div>
+{% endif %}
+
+{% if veri.fast_info %}
+{% set fi = veri.fast_info %}
+<div class="info-grid">
+    {% if fi.market_cap and fi.market_cap > 0 %}
+    <div class="info-item">
+        <div class="label">Market Cap</div>
+        <div class="value mono">
+            {% if fi.market_cap >= 1e12 %}{{ "%.1fT"|format(fi.market_cap / 1e12) }}
+            {% elif fi.market_cap >= 1e9 %}{{ "%.1fB"|format(fi.market_cap / 1e9) }}
+            {% else %}{{ "%.0fM"|format(fi.market_cap / 1e6) }}{% endif %} TL
+        </div>
+    </div>
+    {% endif %}
+    <div class="info-item">
+        <div class="label">P/E Ratio</div>
+        <div class="value mono">{{ "%.1f"|format(fi.pe_ratio) if fi.pe_ratio else "—" }}</div>
+    </div>
+    <div class="info-item">
+        <div class="label">P/B Ratio</div>
+        <div class="value mono">{{ "%.1f"|format(fi.pb_ratio) if fi.pb_ratio else "—" }}</div>
+    </div>
+    <div class="info-item">
+        <div class="label">52W High</div>
+        <div class="value mono green">{{ "%.2f"|format(fi.year_high) }}</div>
+    </div>
+    <div class="info-item">
+        <div class="label">52W Low</div>
+        <div class="value mono red">{{ "%.2f"|format(fi.year_low) }}</div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Chart</h2>
+    <form method="get" action="/bist/{{ sembol }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" name="start" value="{{ start }}">
+            </div>
+            <div class="form-group">
+                <label>End Date</label>
+                <input type="date" name="end" value="{{ end }}">
+            </div>
+            <div class="form-group">
+                <label>Interval</label>
+                <select name="interval">
+                    <option value="5m" {{ 'selected' if interval == '5m' }}>5m</option>
+                    <option value="15m" {{ 'selected' if interval == '15m' }}>15m</option>
+                    <option value="1h" {{ 'selected' if interval == '1h' }}>1h</option>
+                </select>
+            </div>
+            <button type="submit" class="btn">Generate</button>
+        </div>
+    </form>
+
+    {% if chart_html %}
+    <div class="chart-container">
+        {{ chart_html | safe }}
+    </div>
+    {% endif %}
+</div>
+
+{% if history %}
+<div class="card">
+    <h2>Hourly Data <span style="color:#8b949e; font-size:14px; font-weight:400;">(last 20)</span></h2>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date/Time</th>
+                    <th class="text-right">Open</th>
+                    <th class="text-right">High</th>
+                    <th class="text-right">Low</th>
+                    <th class="text-right">Close</th>
+                    <th class="text-right">Volume</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in history %}
+                <tr>
+                    <td class="mono">{{ r.ts }}</td>
+                    <td class="text-right mono">{{ r.open }}</td>
+                    <td class="text-right mono green">{{ r.high }}</td>
+                    <td class="text-right mono red">{{ r.low }}</td>
+                    <td class="text-right mono">{{ r.close }}</td>
+                    <td class="text-right mono">{{ r.volume }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

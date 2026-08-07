@@ -35,6 +35,41 @@ def gecmis_getir(sembol):
         return sembol, None
 
 
+def viop_ozet_veri():
+    v = bp.VIOP()
+    df = v.stock_futures.copy()
+    df["base"] = df["code"].apply(hisse_kodu_ayikla)
+    ozet = (
+        df.groupby("base")
+        .agg(kontrat=("code", "count"), hacim=("volume_qty", "sum"))
+        .sort_values("hacim", ascending=False)
+        .reset_index()
+    )
+    return ozet, df
+
+
+def viop_detay_veri(base, tum_df):
+    filtre = tum_df[tum_df["base"] == base].sort_values("volume_qty", ascending=False)
+    if filtre.empty:
+        return {"kontratlar": pd.DataFrame(), "semboller": {}, "tarihsel": {}, "hata": f"'{base}' için kontrat bulunamadı."}
+
+    semboller = {}
+    for _, row in filtre.iterrows():
+        s = viop_sembol(row["code"])
+        if s and s not in semboller:
+            semboller[s] = row["contract"]
+
+    sonuclar = {}
+    with ThreadPoolExecutor(max_workers=max(len(semboller), 1)) as pool:
+        futures = {pool.submit(gecmis_getir, s): s for s in semboller}
+        for f in as_completed(futures):
+            sembol, df = f.result()
+            if df is not None and len(df) > 0:
+                sonuclar[sembol] = df
+
+    return {"kontratlar": filtre, "semboller": semboller, "tarihsel": sonuclar, "hata": None}
+
+
 def viop_ozet_getir():
     print("\n  VIOP verileri yükleniyor...")
     v = bp.VIOP()

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ base }} Futures — Borsa Dostu{% endblock %}
+{% block content %}
+<h1>{{ base }} Futures <a href="/viop" style="font-size:14px; font-weight:400;">← Back to list</a></h1>
+
+{% if veri.hata %}
+<div class="error">{{ veri.hata }}</div>
+{% endif %}
+
+{% if kontratlar %}
+<div class="card">
+    <h2>Contracts <span style="color:#8b949e; font-size:14px; font-weight:400;">({{ kontratlar|length }})</span></h2>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Contract</th>
+                    <th class="text-right">Price</th>
+                    <th class="text-right">Change</th>
+                    <th class="text-right">Volume</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for k in kontratlar %}
+                <tr>
+                    <td class="mono">{{ k.contract }}</td>
+                    <td class="text-right mono">{{ k.price }}</td>
+                    <td class="text-right mono {{ 'green' if k.change_pos else 'red' }}">{{ k.change }}</td>
+                    <td class="text-right mono">{{ k.volume }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if semboller %}
+<div class="card">
+    <h2>Chart</h2>
+    <form method="get" action="/viop/{{ base }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Contract</label>
+                <select name="sembol">
+                    {% for kod, isim in semboller.items() %}
+                    <option value="{{ kod }}">{{ kod }} — {{ isim }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" name="start" value="{{ start }}">
+            </div>
+            <div class="form-group">
+                <label>End Date</label>
+                <input type="date" name="end" value="{{ end }}">
+            </div>
+            <div class="form-group">
+                <label>Interval</label>
+                <select name="interval">
+                    <option value="5m" {{ 'selected' if interval == '5m' }}>5m</option>
+                    <option value="15m" {{ 'selected' if interval == '15m' }}>15m</option>
+                    <option value="1h" {{ 'selected' if interval == '1h' }}>1h</option>
+                </select>
+            </div>
+            <button type="submit" class="btn">Generate</button>
+        </div>
+    </form>
+
+    {% if chart_html %}
+    <div class="chart-container">
+        {{ chart_html | safe }}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
