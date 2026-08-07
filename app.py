@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request
 from bist import bist_sirketler, bist_detay_veri
-from viop import viop_ozet_veri, viop_detay_veri
+from viop import viop_ozet_veri, viop_detay_veri, kontrat_tarih_araligi
 from graphicgenerator import grafik_ciz_html
 
 app = Flask(__name__)
@@ -70,13 +70,14 @@ def viop_detay(base):
 
     sembol_param = request.args.get("sembol")
     if sembol_param:
-        start = request.args.get("start", "2026-06-07")
-        end = request.args.get("end", "2026-07-07")
-        interval = request.args.get("interval", "5m")
-        try:
-            chart_html = grafik_ciz_html(sembol_param, start, end, interval)
-        except Exception as e:
-            veri["hata"] = f"Chart error: {e}"
+        kod = veri["kodlar"].get(sembol_param, "")
+        start, end = kontrat_tarih_araligi(kod)
+        interval = request.args.get("interval", "1h")
+        if start and end:
+            try:
+                chart_html = grafik_ciz_html(sembol_param, start, end, interval)
+            except Exception as e:
+                veri["hata"] = f"Chart error: {e}"
 
     kontrat_rows = []
     for _, row in veri["kontratlar"].iterrows():
@@ -92,9 +93,7 @@ def viop_detay(base):
     return render_template("viop_detay.html",
                            base=base, veri=veri, kontratlar=kontrat_rows,
                            semboller=veri["semboller"], chart_html=chart_html,
-                           start=request.args.get("start", "2026-06-07"),
-                           end=request.args.get("end", "2026-07-07"),
-                           interval=request.args.get("interval", "5m"))
+                           interval=request.args.get("interval", "1h"))
 
 
 if __name__ == "__main__":
