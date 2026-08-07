@@ -18,7 +18,6 @@ PLOTLY_CONFIG = {
     "modeBarButtons": [
         ["zoomIn2d", "zoomOut2d"],
         ["zoom2d", "pan2d", "select2d"],
-        ["drawline", "drawrect", "eraseshape"],
         ["resetScale2d", "autoScale2d"],
         ["toImage"],
     ],
