@@ -19,7 +19,9 @@ def bist_detay_veri(sembol):
         return result
 
     try:
-        result["info"] = ticker.info
+        info = ticker.info
+        info.get("last")
+        result["info"] = info
     except Exception:
         pass
 
