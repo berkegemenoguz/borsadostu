@@ -202,10 +202,11 @@ def _build_figure(sembol, start, end, interval="5m"):
         yaxis_title="Price (TL)",
         yaxis2_title="Volume",
         legend=dict(bgcolor="#161b22", bordercolor="#333333"),
-        margin=dict(b=80),
+        height=700,
+        margin=dict(b=100),
         annotations=[dict(
             text=ozet, xref="paper", yref="paper",
-            x=0.5, y=-0.12, showarrow=False,
+            x=0.5, y=-0.15, showarrow=False,
             font=dict(size=10, family="monospace", color="white"),
             bgcolor="#161b22", bordercolor="#333333", borderpad=6,
         )],
