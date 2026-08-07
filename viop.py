@@ -27,6 +27,18 @@ def viop_sembol(code):
     return f"{base}{ay_harf}20{yil}"
 
 
+def kontrat_tarih_araligi(code):
+    m = re.match(r"F_[A-Z]+(\d{2})(\d{2})", code)
+    if not m:
+        return None, None
+    ay, yil = int(m.group(1)), 2000 + int(m.group(2))
+    from calendar import monthrange
+    start = f"{yil}-{ay:02d}-01"
+    son_gun = monthrange(yil, ay)[1]
+    end = f"{yil}-{ay:02d}-{son_gun}"
+    return start, end
+
+
 def gecmis_getir(sembol):
     try:
         df = bp.Ticker(sembol).history(period="5g", interval="1h")
@@ -51,13 +63,15 @@ def viop_ozet_veri():
 def viop_detay_veri(base, tum_df):
     filtre = tum_df[tum_df["base"] == base].sort_values("volume_qty", ascending=False)
     if filtre.empty:
-        return {"kontratlar": pd.DataFrame(), "semboller": {}, "tarihsel": {}, "hata": f"'{base}' için kontrat bulunamadı."}
+        return {"kontratlar": pd.DataFrame(), "semboller": {}, "kodlar": {}, "tarihsel": {}, "hata": f"'{base}' için kontrat bulunamadı."}
 
     semboller = {}
+    kodlar = {}
     for _, row in filtre.iterrows():
         s = viop_sembol(row["code"])
         if s and s not in semboller:
             semboller[s] = row["contract"]
+            kodlar[s] = row["code"]
 
     sonuclar = {}
     with ThreadPoolExecutor(max_workers=max(len(semboller), 1)) as pool:
@@ -67,7 +81,7 @@ def viop_detay_veri(base, tum_df):
             if df is not None and len(df) > 0:
                 sonuclar[sembol] = df
 
-    return {"kontratlar": filtre, "semboller": semboller, "tarihsel": sonuclar, "hata": None}
+    return {"kontratlar": filtre, "semboller": semboller, "kodlar": kodlar, "tarihsel": sonuclar, "hata": None}
 
 
 def viop_ozet_getir():
