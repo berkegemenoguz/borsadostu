@@ -24,6 +24,7 @@ PLOTLY_CONFIG = {
     ],
     "scrollZoom": True,
     "displaylogo": False,
+    "responsive": True,
 }
 
 FIB_SCRIPT_EMBED = """<script>
