@@ -10,6 +10,7 @@
 {% if veri.info %}
 {% set info = veri.info %}
 {% set pos = info.get("change", 0) >= 0 %}
+{% set fi = veri.fast_info %}
 <div class="info-grid">
     <div class="info-item">
         <div class="label">Price</div>
@@ -37,13 +38,7 @@
         <div class="label">Low</div>
         <div class="value mono red">{{ "%.2f"|format(info.get("low", 0)) }}</div>
     </div>
-</div>
-{% endif %}
-
-{% if veri.fast_info %}
-{% set fi = veri.fast_info %}
-<div class="info-grid">
-    {% if fi.market_cap and fi.market_cap > 0 %}
+    {% if fi and fi.market_cap and fi.market_cap > 0 %}
     <div class="info-item">
         <div class="label">Market Cap</div>
         <div class="value mono">
@@ -55,33 +50,28 @@
     {% endif %}
     <div class="info-item">
         <div class="label">P/E Ratio</div>
-        <div class="value mono">{{ "%.1f"|format(fi.pe_ratio) if fi.pe_ratio else "—" }}</div>
+        <div class="value mono">{{ "%.1f"|format(fi.pe_ratio) if fi and fi.pe_ratio else "—" }}</div>
     </div>
     <div class="info-item">
         <div class="label">P/B Ratio</div>
-        <div class="value mono">{{ "%.1f"|format(fi.pb_ratio) if fi.pb_ratio else "—" }}</div>
+        <div class="value mono">{{ "%.1f"|format(fi.pb_ratio) if fi and fi.pb_ratio else "—" }}</div>
     </div>
     <div class="info-item">
         <div class="label">52W High</div>
-        <div class="value mono green">{{ "%.2f"|format(fi.year_high) }}</div>
+        <div class="value mono green">{{ "%.2f"|format(fi.year_high) if fi else "—" }}</div>
     </div>
     <div class="info-item">
         <div class="label">52W Low</div>
-        <div class="value mono red">{{ "%.2f"|format(fi.year_low) }}</div>
+        <div class="value mono red">{{ "%.2f"|format(fi.year_low) if fi else "—" }}</div>
     </div>
-</div>
-{% endif %}
-
-{% if veri.info %}
-<div class="info-grid">
     <div class="info-item">
         <div class="label">Dividend Yield</div>
-        <div class="value mono">{{ "%.2f%%"|format(veri.info.get("dividendYield", 0) or 0) }}</div>
+        <div class="value mono">{{ "%.2f%%"|format(info.get("dividendYield", 0) or 0) }}</div>
     </div>
     <div class="info-item">
         <div class="label">Net Debt</div>
         <div class="value mono">
-            {% set nd = veri.info.get("netDebt", 0) or 0 %}
+            {% set nd = info.get("netDebt", 0) or 0 %}
             {% if nd >= 1e12 or nd <= -1e12 %}{{ "%.1fT"|format(nd / 1e12) }}
             {% elif nd >= 1e9 or nd <= -1e9 %}{{ "%.1fB"|format(nd / 1e9) }}
             {% elif nd >= 1e6 or nd <= -1e6 %}{{ "%.0fM"|format(nd / 1e6) }}
@@ -90,7 +80,7 @@
     </div>
     <div class="info-item">
         <div class="label">EV/EBITDA</div>
-        <div class="value mono">{{ "%.1f"|format(veri.info.get("enterpriseToEbitda", 0) or 0) if veri.info.get("enterpriseToEbitda") else "—" }}</div>
+        <div class="value mono">{{ "%.1f"|format(info.get("enterpriseToEbitda", 0) or 0) if info.get("enterpriseToEbitda") else "—" }}</div>
     </div>
 </div>
 {% endif %}
