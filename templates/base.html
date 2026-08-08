@@ -29,8 +29,9 @@
             font-weight: 700;
             color: #f0f6fc;
         }
-        .navbar a { color: #8b949e; font-size: 14px; }
+        .navbar a { color: #8b949e; font-size: 14px; padding-bottom: 14px; border-bottom: 2px solid transparent; }
         .navbar a:hover { color: #f0f6fc; text-decoration: none; }
+        .navbar a.nav-active { color: #f0f6fc; border-bottom-color: #58a6ff; }
 
         .container {
             max-width: 1200px;
@@ -186,8 +187,8 @@
 <body>
     <nav class="navbar">
         <a href="/" class="brand">Borsa Dostu</a>
-        <a href="/bist">BIST</a>
-        <a href="/viop">VIOP</a>
+        <a href="/bist" class="{{ 'nav-active' if request.path.startswith('/bist') }}">BIST</a>
+        <a href="/viop" class="{{ 'nav-active' if request.path.startswith('/viop') }}">VIOP</a>
         <div class="lang-switch">
             <span class="{{ 'active' if lang == 'tr' }}" onclick="window.location='/lang/tr'">TR</span>
             <button class="lang-toggle {{ lang }}" onclick="window.location='/lang/{{ 'tr' if lang == 'en' else 'en' }}'"></button>
