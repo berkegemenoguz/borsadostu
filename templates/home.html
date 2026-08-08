@@ -1,20 +1,123 @@
 {% extends "base.html" %}
 {% block title %}{{ t.site_name }} — {{ t.subtitle }}{% endblock %}
 {% block content %}
-<div style="text-align:center; padding:40px 0 30px;">
-    <h1 style="font-size:32px; margin-bottom:8px;">{{ t.site_name }}</h1>
-    <p style="color:#8b949e; font-size:16px;">{{ t.subtitle }}</p>
+<style>
+    .home-container { max-width: 900px; margin: 0 auto; }
+
+    .ticker-bar { background: #161b22; border-bottom: 1px solid #30363d; overflow: hidden; height: 34px; margin: -24px -20px 0; padding: 0 20px; }
+    .ticker-track { display: flex; gap: 32px; white-space: nowrap; padding: 8px 0; animation: scroll-ticker 25s linear infinite; }
+    .ticker-item { font-size: 13px; color: #8b949e; font-family: "SF Mono", "Fira Code", monospace; display: flex; gap: 6px; }
+    .ticker-item .up { color: #3fb950; }
+    .ticker-item .down { color: #f85149; }
+    @keyframes scroll-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+    .hero { text-align: center; padding: 48px 0 20px; }
+    .hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 8px; }
+    .hero h1 span { background: linear-gradient(135deg, #58a6ff, #3fb950); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p { color: #8b949e; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; font-weight: 500; }
+
+    .stats-row { display: flex; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+    .stat { flex: 1; text-align: center; padding: 14px; border-right: 1px solid #30363d; }
+    .stat:last-child { border-right: none; }
+    .stat .val { font-size: 22px; font-weight: 800; color: #f0f6fc; letter-spacing: -0.5px; }
+    .stat .lbl { font-size: 10px; color: #8b949e; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
+
+    .sep { height: 1px; background: linear-gradient(to right, transparent, #30363d, transparent); margin: 8px 0; }
+
+    .home-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
+    .home-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 22px; text-decoration: none; transition: border-color 0.2s, transform 0.2s; display: block; }
+    .home-card:hover { border-color: #58a6ff; transform: translateY(-2px); text-decoration: none; }
+    .home-card .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 4px; margin-bottom: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .home-card:first-child .tag { color: #58a6ff; background: rgba(88,166,255,0.1); }
+    .home-card:last-child .tag { color: #3fb950; background: rgba(63,185,80,0.1); }
+    .home-card h2 { font-size: 18px; color: #f0f6fc; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
+    .home-card p { color: #8b949e; font-size: 13px; line-height: 1.6; }
+    .home-card .arrow { display: inline-block; margin-top: 12px; font-size: 13px; color: #58a6ff; font-weight: 500; }
+
+    .section-title { font-size: 15px; font-weight: 700; color: #f0f6fc; letter-spacing: -0.3px; margin-top: 32px; margin-bottom: 14px; }
+
+    .market-bar { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px; margin-bottom: 8px; }
+    .market-left { display: flex; align-items: center; gap: 8px; }
+    .market-dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; animation: blink 2s ease-in-out infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .market-label { font-size: 13px; color: #f0f6fc; font-weight: 600; }
+    .market-sub { font-size: 12px; color: #8b949e; }
+
+    @media (max-width: 768px) {
+        .home-cards { grid-template-columns: 1fr; }
+        .hero h1 { font-size: 28px; }
+        .stat .val { font-size: 18px; }
+    }
+</style>
+
+<div class="home-container">
+    {% if ticker_data %}
+    <div class="ticker-bar">
+        <div class="ticker-track">
+            {% for item in ticker_data %}
+            <div class="ticker-item">{{ item.symbol }} {{ item.price }} <span class="{{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
+            {% endfor %}
+            {% for item in ticker_data %}
+            <div class="ticker-item">{{ item.symbol }} {{ item.price }} <span class="{{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="hero">
+        <h1>Borsa <span>Dostu</span></h1>
+        <p>{{ t.stock_analysis }}</p>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat"><div class="val">540+</div><div class="lbl">{{ t.companies_count.split()[1] if ' ' in t.companies_count else 'Companies' }}</div></div>
+        <div class="stat"><div class="val">47</div><div class="lbl">{{ t.futures_count.split()[1] if ' ' in t.futures_count else 'Futures' }}</div></div>
+        <div class="stat"><div class="val">{{ t.live_data.split()[0] }}</div><div class="lbl">{{ t.live_data.split()[1] if ' ' in t.live_data else 'Data' }}</div></div>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="home-cards">
+        <a href="/bist" class="home-card">
+            <div class="tag">{{ t.equities }}</div>
+            <h2>BIST</h2>
+            <p>{{ t.bist_card_desc }}</p>
+            <span class="arrow">{{ t.explore }} →</span>
+        </a>
+        <a href="/viop" class="home-card">
+            <div class="tag">{{ t.futures }}</div>
+            <h2>VIOP</h2>
+            <p>{{ t.viop_card_desc }}</p>
+            <span class="arrow">{{ t.explore }} →</span>
+        </a>
+    </div>
+
+    <div class="sep" style="margin-top:24px"></div>
+
+    <div class="section-title">{{ t.market_status }}</div>
+    <div class="market-bar">
+        <div class="market-left">
+            <div class="market-dot"></div>
+            <div class="market-label">{{ t.borsa_istanbul }}</div>
+        </div>
+        <div class="market-sub" id="market-hours"></div>
+    </div>
 </div>
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:700px; margin:0 auto;">
-    <a href="/bist" class="card" style="text-decoration:none; text-align:center;">
-        <div style="font-size:36px; margin-bottom:12px;">📈</div>
-        <h2>BIST</h2>
-        <p style="color:#8b949e; font-size:14px;">{{ t.bist_desc }}</p>
-    </a>
-    <a href="/viop" class="card" style="text-decoration:none; text-align:center;">
-        <div style="font-size:36px; margin-bottom:12px;">📊</div>
-        <h2>VIOP</h2>
-        <p style="color:#8b949e; font-size:14px;">{{ t.viop_desc }}</p>
-    </a>
-</div>
+
+<script>
+(function() {
+    var now = new Date();
+    var istanbul = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Istanbul"}));
+    var h = istanbul.getHours(), m = istanbul.getMinutes(), d = istanbul.getDay();
+    var open = (d >= 1 && d <= 5) && ((h > 10 || (h === 10 && m >= 0)) && h < 18);
+    var el = document.getElementById("market-hours");
+    if (open) {
+        el.textContent = "Open · Closes at 18:00";
+    } else {
+        document.querySelector(".market-dot").style.background = "#8b949e";
+        document.querySelector(".market-dot").style.animation = "none";
+        el.textContent = "Closed · Opens Mon-Fri 10:00";
+    }
+})();
+</script>
 {% endblock %}

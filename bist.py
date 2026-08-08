@@ -4,6 +4,24 @@ from datetime import date
 from graphicgenerator import grafik_ciz_html
 
 
+TICKER_SYMBOLS = ["THYAO", "TUPRS", "ASELS", "GARAN", "EREGL", "KCHOL", "AKBNK", "SASA", "BIMAS", "SAHOL"]
+
+
+def bist_ticker_veri():
+    items = []
+    for sym in TICKER_SYMBOLS:
+        try:
+            t = bp.Ticker(sym)
+            info = t.info
+            info.get("last")
+            price = info.get("last", 0)
+            change = info.get("change_percent", 0)
+            items.append({"symbol": sym, "price": f"{price:.2f}", "change": change, "pos": change >= 0})
+        except Exception:
+            pass
+    return items
+
+
 def bist_sirketler():
     sirketler = bp.companies()
     df = pd.DataFrame(sirketler)
