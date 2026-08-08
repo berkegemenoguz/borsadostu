@@ -139,6 +139,11 @@
 
         .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
 
+        .footer { border-top: 1px solid #30363d; padding: 20px; margin-top: 40px; text-align: center; font-size: 12px; color: #8b949e; }
+        .footer a { color: #8b949e; }
+        .footer a:hover { color: #f0f6fc; }
+        .footer-links { display: flex; justify-content: center; gap: 16px; margin-top: 6px; }
+
         .lang-switch { display: flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: #8b949e; }
         .lang-switch span { cursor: pointer; }
         .lang-switch span.active { color: #f0f6fc; font-weight: 600; }
@@ -196,6 +201,14 @@
     <div class="container">
         {% block content %}{% endblock %}
     </div>
+    <footer class="footer">
+        <div>&copy; 2026 Borsa Dostu</div>
+        <div class="footer-links">
+            <a href="mailto:berkegemenoguz@gmail.com">berkegemenoguz@gmail.com</a>
+            <span>·</span>
+            <a href="https://github.com/berkegemenoguz/borsadostu" target="_blank">GitHub</a>
+        </div>
+    </footer>
     <script>
     document.querySelectorAll("form").forEach(function(f){
         f.addEventListener("submit", function(){ document.getElementById("loading").classList.add("active"); });
