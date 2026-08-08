@@ -1,24 +1,37 @@
 import borsapy as bp
 import pandas as pd
+import time
 from datetime import date
+from concurrent.futures import ThreadPoolExecutor
 from graphicgenerator import grafik_ciz_html
 
 
 TICKER_SYMBOLS = ["THYAO", "TUPRS", "ASELS", "GARAN", "EREGL", "KCHOL", "AKBNK", "SASA", "BIMAS", "SAHOL"]
+_ticker_cache = {"data": [], "time": 0}
+CACHE_TTL = 300
+
+
+def _fetch_one(sym):
+    try:
+        t = bp.Ticker(sym)
+        info = t.info
+        info.get("last")
+        return {"symbol": sym, "price": f"{info.get('last', 0):.2f}",
+                "change": info.get("change_percent", 0),
+                "pos": info.get("change_percent", 0) >= 0}
+    except Exception:
+        return None
 
 
 def bist_ticker_veri():
-    items = []
-    for sym in TICKER_SYMBOLS:
-        try:
-            t = bp.Ticker(sym)
-            info = t.info
-            info.get("last")
-            price = info.get("last", 0)
-            change = info.get("change_percent", 0)
-            items.append({"symbol": sym, "price": f"{price:.2f}", "change": change, "pos": change >= 0})
-        except Exception:
-            pass
+    now = time.time()
+    if _ticker_cache["data"] and (now - _ticker_cache["time"]) < CACHE_TTL:
+        return _ticker_cache["data"]
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        results = list(pool.map(_fetch_one, TICKER_SYMBOLS))
+    items = [r for r in results if r]
+    _ticker_cache["data"] = items
+    _ticker_cache["time"] = now
     return items
 
 
