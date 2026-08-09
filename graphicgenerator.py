@@ -190,6 +190,28 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
         name="Price",
     ), row=1, col=1)
 
+    if indicators and "bb" in indicators:
+        bb_mid = df["Close"].rolling(window=20).mean()
+        bb_std = df["Close"].rolling(window=20).std()
+        bb_upper = bb_mid + 2 * bb_std
+        bb_lower = bb_mid - 2 * bb_std
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=bb_upper,
+            mode="lines", name="BB Upper",
+            line=dict(color="#9e9e9e", width=1, dash="dot"),
+        ), row=1, col=1)
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=bb_lower,
+            mode="lines", name="BB Lower",
+            line=dict(color="#9e9e9e", width=1, dash="dot"),
+            fill="tonexty", fillcolor="rgba(158,158,158,0.08)",
+        ), row=1, col=1)
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=bb_mid,
+            mode="lines", name="BB Mid",
+            line=dict(color="#9e9e9e", width=1),
+        ), row=1, col=1)
+
     if indicators:
         for ind in indicators:
             if ind in SMA_EMA_COLORS:

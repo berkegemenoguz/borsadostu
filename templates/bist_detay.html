@@ -111,7 +111,7 @@
             <div class="form-group">
                 <label>{{ t.indicators }}</label>
                 <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">
-                    {% for key, label in [("sma20","SMA 20"),("sma50","SMA 50"),("sma200","SMA 200"),("ema20","EMA 20"),("ema50","EMA 50"),("rsi","RSI 14"),("macd","MACD")] %}
+                    {% for key, label in [("sma20","SMA 20"),("sma50","SMA 50"),("sma200","SMA 200"),("ema20","EMA 20"),("ema50","EMA 50"),("bb","Bollinger"),("rsi","RSI 14"),("macd","MACD")] %}
                     <label style="display:flex; align-items:center; gap:4px; font-size:13px; color:#8b949e; cursor:pointer;">
                         <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
                     </label>
