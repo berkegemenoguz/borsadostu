@@ -1,10 +1,26 @@
 {% extends "base.html" %}
 {% block title %}{{ t.site_name }} — {{ t.subtitle }}{% endblock %}
+
+{% block pre_content %}
+{% if ticker_data %}
+<div class="ticker-bar">
+    <div class="ticker-track">
+        {% for item in ticker_data %}
+        <div class="ticker-item">{{ item.symbol }} {{ item.price }} <span class="{{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
+        {% endfor %}
+        {% for item in ticker_data %}
+        <div class="ticker-item">{{ item.symbol }} {{ item.price }} <span class="{{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <style>
     .home-container { max-width: 900px; margin: 0 auto; }
 
-    .ticker-bar { background: #161b22; border-bottom: 1px solid #30363d; overflow: hidden; height: 34px; margin: -24px -20px 0; padding: 0 20px; }
+    .ticker-bar { background: #161b22; border-bottom: 1px solid #30363d; overflow: hidden; height: 34px; width: 100%; }
     .ticker-track { display: flex; gap: 32px; white-space: nowrap; padding: 8px 0; animation: scroll-ticker 25s linear infinite; }
     .ticker-item { font-size: 13px; color: #8b949e; font-family: "SF Mono", "Fira Code", monospace; display: flex; gap: 6px; }
     .ticker-item .up { color: #3fb950; }
@@ -51,19 +67,6 @@
 </style>
 
 <div class="home-container">
-    {% if ticker_data %}
-    <div class="ticker-bar">
-        <div class="ticker-track">
-            {% for item in ticker_data %}
-            <div class="ticker-item">{{ item.symbol }} {{ item.price }} <span class="{{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
-            {% endfor %}
-            {% for item in ticker_data %}
-            <div class="ticker-item">{{ item.symbol }} {{ item.price }} <span class="{{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
     <div class="hero">
         <h1>Borsa <span>Dostu</span></h1>
         <p>{{ t.stock_analysis }}</p>
