@@ -157,8 +157,16 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
     ]
 
     has_rsi = indicators and "rsi" in indicators
+    has_macd = indicators and "macd" in indicators
+    extra_panels = int(has_rsi) + int(has_macd)
 
-    if has_rsi:
+    if extra_panels == 2:
+        fig = make_subplots(
+            rows=4, cols=1, shared_xaxes=True,
+            vertical_spacing=0.03,
+            row_heights=[0.50, 0.16, 0.17, 0.17],
+        )
+    elif extra_panels == 1:
         fig = make_subplots(
             rows=3, cols=1, shared_xaxes=True,
             vertical_spacing=0.03,
@@ -170,6 +178,8 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
             vertical_spacing=0.03,
             row_heights=[0.75, 0.25],
         )
+
+    rsi_row = macd_row = next_row = 3
 
     fig.add_trace(go.Candlestick(
         x=df["Idx"],
@@ -210,25 +220,51 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
     ), row=2, col=1)
 
     if has_rsi:
+        rsi_row = next_row
+        next_row += 1
         delta = df["Close"].diff()
         gain = delta.where(delta > 0, 0.0).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0.0)).rolling(window=14).mean()
         rs = gain / loss
         rsi = 100 - (100 / (1 + rs))
-        rsi_color = ["#3fb950" if v >= 50 else "#f85149" for v in rsi.fillna(50)]
         fig.add_trace(go.Scatter(
             x=df["Idx"], y=rsi,
             mode="lines", name="RSI 14",
             line=dict(color="#e040fb", width=1.5),
-        ), row=3, col=1)
+        ), row=rsi_row, col=1)
         fig.add_hline(y=70, line_dash="dot", line_color="#f85149",
-                      line_width=1, opacity=0.5, row=3, col=1,
+                      line_width=1, opacity=0.5, row=rsi_row, col=1,
                       annotation_text="70", annotation_font_color="#f85149",
                       annotation_font_size=9)
         fig.add_hline(y=30, line_dash="dot", line_color="#3fb950",
-                      line_width=1, opacity=0.5, row=3, col=1,
+                      line_width=1, opacity=0.5, row=rsi_row, col=1,
                       annotation_text="30", annotation_font_color="#3fb950",
                       annotation_font_size=9)
+
+    if has_macd:
+        macd_row = next_row
+        next_row += 1
+        ema12 = df["Close"].ewm(span=12, adjust=False).mean()
+        ema26 = df["Close"].ewm(span=26, adjust=False).mean()
+        macd_line = ema12 - ema26
+        signal_line = macd_line.ewm(span=9, adjust=False).mean()
+        macd_hist = macd_line - signal_line
+        hist_colors = ["#26a69a" if v >= 0 else "#ef5350" for v in macd_hist.fillna(0)]
+        fig.add_trace(go.Bar(
+            x=df["Idx"], y=macd_hist,
+            marker_color=hist_colors, opacity=0.6,
+            name="MACD Hist",
+        ), row=macd_row, col=1)
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=macd_line,
+            mode="lines", name="MACD",
+            line=dict(color="#2196f3", width=1.5),
+        ), row=macd_row, col=1)
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=signal_line,
+            mode="lines", name="Signal",
+            line=dict(color="#ff9800", width=1.5),
+        ), row=macd_row, col=1)
 
     degisim_renk = "#26a69a" if degisim >= 0 else "#ef5350"
     fig.add_hline(
@@ -258,9 +294,11 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
         xaxis_rangeslider_visible=False,
         yaxis_title="Price (TL)",
         yaxis2_title="Volume",
-        **({"yaxis3_title": "RSI", "yaxis3": dict(range=[0, 100])} if has_rsi else {}),
+        **({"yaxis" + str(rsi_row) + "_title": "RSI",
+            "yaxis" + str(rsi_row): dict(range=[0, 100])} if has_rsi else {}),
+        **({"yaxis" + str(macd_row) + "_title": "MACD"} if has_macd else {}),
         legend=dict(bgcolor="#161b22", bordercolor="#333333"),
-        height=700,
+        height=700 + extra_panels * 120,
         margin=dict(b=100),
         annotations=[dict(
             text=ozet, xref="paper", yref="paper",
@@ -290,9 +328,11 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
         fixedrange=False,
     )
 
-    axes = ["xaxis", "xaxis2", "yaxis", "yaxis2"]
-    if has_rsi:
-        axes += ["xaxis3", "yaxis3"]
+    total_rows = 2 + extra_panels
+    axes = []
+    for i in range(1, total_rows + 1):
+        suffix = "" if i == 1 else str(i)
+        axes += ["xaxis" + suffix, "yaxis" + suffix]
     for ax in axes:
         fig.update_layout(**{ax: dict(gridcolor="#1e2a38", zeroline=False)})
 
