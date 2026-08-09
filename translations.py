@@ -65,6 +65,7 @@ TRANSLATIONS = {
         "tool_fund_desc": "P/E, P/B, EV/EBITDA, dividends, net debt and more",
         "market_status": "Market status",
         "borsa_istanbul": "Borsa Istanbul",
+        "indicators": "Indicators",
     },
     "tr": {
         "site_name": "Borsa Dostu",
@@ -132,5 +133,6 @@ TRANSLATIONS = {
         "tool_fund_desc": "F/K, PD/DD, FD/FAVÖK, temettü, net borç ve daha fazlası",
         "market_status": "Piyasa durumu",
         "borsa_istanbul": "Borsa İstanbul",
+        "indicators": "Göstergeler",
     },
 }

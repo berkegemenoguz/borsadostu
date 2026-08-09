@@ -48,12 +48,13 @@ def bist_detay(sembol):
     veri = bist_detay_veri(sembol)
     chart_html = None
 
+    indicators = request.args.getlist("ind")
     start = request.args.get("start")
     if start:
         end = request.args.get("end", start)
         interval = request.args.get("interval", "5m")
         try:
-            chart_html = grafik_ciz_html(sembol, start, end, interval)
+            chart_html = grafik_ciz_html(sembol, start, end, interval, indicators or None)
         except Exception as e:
             veri["hata"] = f"Chart error: {e}"
 
@@ -75,7 +76,8 @@ def bist_detay(sembol):
                            chart_html=chart_html,
                            start=request.args.get("start", "2026-06-07"),
                            end=request.args.get("end", "2026-07-07"),
-                           interval=request.args.get("interval", "5m"))
+                           interval=request.args.get("interval", "5m"),
+                           active_indicators=indicators)
 
 
 @app.route("/viop")
@@ -92,6 +94,7 @@ def viop_detay(base):
     veri = viop_detay_veri(base, tum_df)
     chart_html = None
 
+    indicators = request.args.getlist("ind")
     sembol_param = request.args.get("sembol")
     if sembol_param:
         kod = veri["kodlar"].get(sembol_param, "")
@@ -99,7 +102,7 @@ def viop_detay(base):
         interval = request.args.get("interval", "1h")
         if start and end:
             try:
-                chart_html = grafik_ciz_html(sembol_param, start, end, interval)
+                chart_html = grafik_ciz_html(sembol_param, start, end, interval, indicators or None)
             except Exception as e:
                 veri["hata"] = f"Chart error: {e}"
 
@@ -117,7 +120,8 @@ def viop_detay(base):
     return render_template("viop_detay.html",
                            base=base, veri=veri, kontratlar=kontrat_rows,
                            semboller=veri["semboller"], chart_html=chart_html,
-                           interval=request.args.get("interval", "1h"))
+                           interval=request.args.get("interval", "1h"),
+                           active_indicators=indicators)
 
 
 if __name__ == "__main__":

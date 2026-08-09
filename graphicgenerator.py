@@ -114,7 +114,16 @@ FIB_SCRIPT_EMBED = """<script>
 </script>"""
 
 
-def _build_figure(sembol, start, end, interval="5m"):
+SMA_EMA_COLORS = {
+    "sma20": ("#ffeb3b", "SMA 20"),
+    "sma50": ("#ff9800", "SMA 50"),
+    "sma200": ("#e91e63", "SMA 200"),
+    "ema20": ("#00bcd4", "EMA 20"),
+    "ema50": ("#7c4dff", "EMA 50"),
+}
+
+
+def _build_figure(sembol, start, end, interval="5m", indicators=None):
     hisse = bp.Ticker(sembol)
     df = hisse.history(start=start, end=end, interval=interval)
 
@@ -128,6 +137,9 @@ def _build_figure(sembol, start, end, interval="5m"):
         df["Datetime"] = pd.to_datetime(df["Datetime"])
 
     df = df.sort_values("Datetime").reset_index(drop=True)
+    df["Idx"] = range(len(df))
+    tick_positions = list(range(0, len(df), max(1, len(df) // 10)))
+    tick_labels = [df["Datetime"].iloc[i].strftime("%m-%d %H:%M") for i in tick_positions]
 
     acilis = df.iloc[0]["Open"]
     kapanis = df.iloc[-1]["Close"]
@@ -151,7 +163,7 @@ def _build_figure(sembol, start, end, interval="5m"):
     )
 
     fig.add_trace(go.Candlestick(
-        x=df["Datetime"],
+        x=df["Idx"],
         open=df["Open"], high=df["High"],
         low=df["Low"], close=df["Close"],
         increasing_line_color="#26a69a", increasing_fillcolor="#26a69a",
@@ -159,15 +171,31 @@ def _build_figure(sembol, start, end, interval="5m"):
         name="Price",
     ), row=1, col=1)
 
+    if indicators:
+        for ind in indicators:
+            if ind in SMA_EMA_COLORS:
+                color, label = SMA_EMA_COLORS[ind]
+                if ind.startswith("sma"):
+                    period = int(ind[3:])
+                    series = df["Close"].rolling(window=period).mean()
+                else:
+                    period = int(ind[3:])
+                    series = df["Close"].ewm(span=period, adjust=False).mean()
+                fig.add_trace(go.Scatter(
+                    x=df["Idx"], y=series,
+                    mode="lines", name=label,
+                    line=dict(color=color, width=1.5),
+                ), row=1, col=1)
+
     fig.add_trace(go.Scatter(
-        x=df["Datetime"], y=(df["High"] + df["Low"]) / 2,
+        x=df["Idx"], y=(df["High"] + df["Low"]) / 2,
         mode="markers", marker=dict(size=12, opacity=0),
         showlegend=False, hoverinfo="skip", name="_click_helper",
         customdata=df[["High", "Low"]].values.tolist(),
     ), row=1, col=1)
 
     fig.add_trace(go.Bar(
-        x=df["Datetime"], y=df["Volume"],
+        x=df["Idx"], y=df["Volume"],
         marker_color=hacim_renk, opacity=0.8,
         name="Volume",
     ), row=2, col=1)
@@ -222,6 +250,8 @@ def _build_figure(sembol, start, end, interval="5m"):
     fig.update_xaxes(
         spikemode="across", spikethickness=1,
         spikecolor="#555555", spikedash="dot",
+        tickvals=tick_positions,
+        ticktext=tick_labels,
     )
     fig.update_yaxes(
         spikemode="across", spikethickness=1,
@@ -235,8 +265,8 @@ def _build_figure(sembol, start, end, interval="5m"):
     return fig
 
 
-def grafik_ciz_html(sembol, start, end, interval="5m"):
-    fig = _build_figure(sembol, start, end, interval)
+def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None):
+    fig = _build_figure(sembol, start, end, interval, indicators)
     if fig is None:
         return None
 
