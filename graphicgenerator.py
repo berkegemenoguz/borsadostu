@@ -156,11 +156,20 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
         for c, o in zip(df["Close"], df["Open"])
     ]
 
-    fig = make_subplots(
-        rows=2, cols=1, shared_xaxes=True,
-        vertical_spacing=0.03,
-        row_heights=[0.75, 0.25],
-    )
+    has_rsi = indicators and "rsi" in indicators
+
+    if has_rsi:
+        fig = make_subplots(
+            rows=3, cols=1, shared_xaxes=True,
+            vertical_spacing=0.03,
+            row_heights=[0.60, 0.20, 0.20],
+        )
+    else:
+        fig = make_subplots(
+            rows=2, cols=1, shared_xaxes=True,
+            vertical_spacing=0.03,
+            row_heights=[0.75, 0.25],
+        )
 
     fig.add_trace(go.Candlestick(
         x=df["Idx"],
@@ -200,6 +209,27 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
         name="Volume",
     ), row=2, col=1)
 
+    if has_rsi:
+        delta = df["Close"].diff()
+        gain = delta.where(delta > 0, 0.0).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0.0)).rolling(window=14).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        rsi_color = ["#3fb950" if v >= 50 else "#f85149" for v in rsi.fillna(50)]
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=rsi,
+            mode="lines", name="RSI 14",
+            line=dict(color="#e040fb", width=1.5),
+        ), row=3, col=1)
+        fig.add_hline(y=70, line_dash="dot", line_color="#f85149",
+                      line_width=1, opacity=0.5, row=3, col=1,
+                      annotation_text="70", annotation_font_color="#f85149",
+                      annotation_font_size=9)
+        fig.add_hline(y=30, line_dash="dot", line_color="#3fb950",
+                      line_width=1, opacity=0.5, row=3, col=1,
+                      annotation_text="30", annotation_font_color="#3fb950",
+                      annotation_font_size=9)
+
     degisim_renk = "#26a69a" if degisim >= 0 else "#ef5350"
     fig.add_hline(
         y=kapanis, line_dash="dash", line_color=degisim_renk,
@@ -228,6 +258,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
         xaxis_rangeslider_visible=False,
         yaxis_title="Price (TL)",
         yaxis2_title="Volume",
+        **({"yaxis3_title": "RSI", "yaxis3": dict(range=[0, 100])} if has_rsi else {}),
         legend=dict(bgcolor="#161b22", bordercolor="#333333"),
         height=700,
         margin=dict(b=100),
@@ -259,7 +290,10 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
         fixedrange=False,
     )
 
-    for ax in ["xaxis", "xaxis2", "yaxis", "yaxis2"]:
+    axes = ["xaxis", "xaxis2", "yaxis", "yaxis2"]
+    if has_rsi:
+        axes += ["xaxis3", "yaxis3"]
+    for ax in axes:
         fig.update_layout(**{ax: dict(gridcolor="#1e2a38", zeroline=False)})
 
     return fig
