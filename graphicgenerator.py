@@ -156,8 +156,8 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
         for c, o in zip(df["Close"], df["Open"])
     ]
 
-    has_rsi = indicators and "rsi" in indicators
-    has_macd = indicators and "macd" in indicators
+    has_rsi = bool(indicators and "rsi" in indicators)
+    has_macd = bool(indicators and "macd" in indicators)
     extra_panels = int(has_rsi) + int(has_macd)
 
     if extra_panels == 2:
