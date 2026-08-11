@@ -119,7 +119,7 @@
                 <div>
                     <div style="font-size:11px;color:#6e7681;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Overlay</div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        {% for key, label in [("sma20","SMA 20"),("sma50","SMA 50"),("sma200","SMA 200"),("ema20","EMA 20"),("ema50","EMA 50"),("bb","Bollinger")] %}
+                        {% for key, label in [("sma20","SMA 20"),("sma50","SMA 50"),("sma200","SMA 200"),("ema20","EMA 20"),("ema50","EMA 50"),("bb","Bollinger"),("sr","S/R")] %}
                         <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#c9d1d9;cursor:pointer;">
                             <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
                         </label>

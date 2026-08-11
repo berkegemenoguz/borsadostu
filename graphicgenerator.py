@@ -212,6 +212,47 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
             line=dict(color="#9e9e9e", width=1),
         ), row=1, col=1)
 
+    sr_annotations = []
+    if indicators and "sr" in indicators:
+        window = max(5, len(df) // 20)
+        sr_points = []
+        for i in range(window, len(df) - window):
+            if df["High"].iloc[i] == df["High"].iloc[i - window:i + window + 1].max():
+                sr_points.append((df["High"].iloc[i], i, "r"))
+            if df["Low"].iloc[i] == df["Low"].iloc[i - window:i + window + 1].min():
+                sr_points.append((df["Low"].iloc[i], i, "s"))
+        clustered = []
+        for lvl, idx, kind in sorted(sr_points):
+            merged = False
+            for c in clustered:
+                if abs(lvl - c[0]) / c[0] < 0.005:
+                    c[1].append(idx)
+                    merged = True
+                    break
+            if not merged:
+                clustered.append((lvl, [idx], kind))
+        sr_colors = {"r": "#ef5350", "s": "#26a69a"}
+        current = df["Close"].iloc[-1]
+        seg_len = max(8, len(df) // 8)
+        for lvl, indices, kind in clustered:
+            kind = "r" if lvl > current else "s"
+            center = int(sum(indices) / len(indices))
+            x0 = max(0, center - seg_len // 2)
+            x1 = min(len(df) - 1, center + seg_len // 2)
+            fig.add_shape(
+                type="line", x0=x0, x1=x1, y0=lvl, y1=lvl,
+                xref="x", yref="y",
+                line=dict(color=sr_colors[kind], width=1.5, dash="dash"),
+                opacity=0.7, row=1, col=1,
+            )
+            sr_annotations.append(dict(
+                x=x1, y=lvl, xref="x", yref="y",
+                text=f" {'R' if kind == 'r' else 'S'} {lvl:.2f}",
+                showarrow=False,
+                font=dict(color=sr_colors[kind], size=9, family="monospace"),
+                xanchor="left",
+            ))
+
     if indicators:
         for ind in indicators:
             if ind in SMA_EMA_COLORS:
@@ -327,7 +368,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
             x=0.5, y=-0.15, showarrow=False,
             font=dict(size=10, family="monospace", color="white"),
             bgcolor="#161b22", bordercolor="#333333", borderpad=6,
-        )],
+        )] + sr_annotations,
         newshape=dict(line_color="#ffab00", line_width=2),
         dragmode="pan",
         hovermode="x unified",
