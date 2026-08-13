@@ -64,8 +64,37 @@ FIB_SCRIPT_EMBED = """<script>
     toggle.style.color = "#4fc3f7";
     toggle.textContent = "Fib: pick high";
     gd._fibMode = true;
+    gd._trendMode = false;
   };
   menu.appendChild(fibBtn);
+
+  var trendBtn = document.createElement("a");
+  trendBtn.style.cssText = "display:block;padding:8px 12px;color:#999;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
+  trendBtn.textContent = "Trend Line";
+  trendBtn.onmouseenter = function(){ trendBtn.style.background="#1e2a38"; };
+  trendBtn.onmouseleave = function(){ trendBtn.style.background="transparent"; };
+  trendBtn.onclick = function(){
+    menu.style.display = "none";
+    clicks = [];
+    toggle.style.color = "#4fc3f7";
+    toggle.textContent = "Trend: pick 1st";
+    gd._trendMode = true;
+    gd._fibMode = false;
+  };
+  menu.appendChild(trendBtn);
+
+  var clearBtn = document.createElement("a");
+  clearBtn.style.cssText = "display:block;padding:8px 12px;color:#ef5350;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;border-top:1px solid #333;";
+  clearBtn.textContent = "Clear All";
+  clearBtn.onmouseenter = function(){ clearBtn.style.background="#1e2a38"; };
+  clearBtn.onmouseleave = function(){ clearBtn.style.background="transparent"; };
+  clearBtn.onclick = function(){
+    menu.style.display = "none";
+    var shapes = (gd.layout.shapes||[]).filter(function(s){return !s._fib && !s._trend;});
+    var annots = (gd.layout.annotations||[]).filter(function(a){return !a._fib && !a._trend;});
+    Plotly.relayout(gd, {shapes:shapes, annotations:annots});
+  };
+  menu.appendChild(clearBtn);
 
   toggle.onclick = function(e){
     e.stopPropagation();
@@ -79,35 +108,57 @@ FIB_SCRIPT_EMBED = """<script>
   if(group) group.appendChild(dropdown);
 
   gd.on("plotly_click", function(data){
-    if(!gd._fibMode) return;
+    if(!gd._fibMode && !gd._trendMode) return;
     var pt = data.points[0];
     if(pt.curveNumber > 1) return;
     var yVal = pt.y != null ? pt.y : (pt.close != null ? pt.close : pt.high);
     if(yVal == null || isNaN(yVal)) return;
-    clicks.push(yVal);
-    if(clicks.length === 1){
-      toggle.textContent = "Fib: pick low";
-    }
-    if(clicks.length === 2){
-      gd._fibMode = false;
-      toggle.style.color = "#999";
-      toggle.textContent = "Tools ▾";
-      var high = Math.max(clicks[0], clicks[1]);
-      var low = Math.min(clicks[0], clicks[1]);
-      var diff = high - low;
-      var shapes = gd.layout.shapes ? gd.layout.shapes.slice() : [];
-      var annots = gd.layout.annotations ? gd.layout.annotations.slice() : [];
-      for(var i=0; i<fibLevels.length; i++){
-        var yVal = high - diff * fibLevels[i];
-        shapes.push({type:"line", x0:0, x1:1, xref:"paper", y0:yVal, y1:yVal,
-          yref:"y", line:{color:fibColors[i], width:1.5, dash:"dot"}, opacity:0.8, _fib:true});
-        annots.push({x:0.01, xref:"paper", y:yVal, yref:"y",
-          text:(fibLevels[i]*100).toFixed(1)+"% "+yVal.toFixed(2),
-          showarrow:false, font:{color:fibColors[i], size:10, family:"monospace"},
-          bgcolor:"rgba(13,17,23,0.8)", borderpad:2, xanchor:"left", _fib:true});
+    var xVal = pt.pointIndex;
+
+    if(gd._trendMode){
+      clicks.push({x: xVal, y: yVal});
+      if(clicks.length === 1){
+        toggle.textContent = "Trend: pick 2nd";
       }
-      Plotly.relayout(gd, {shapes:shapes, annotations:annots});
-      clicks = [];
+      if(clicks.length === 2){
+        gd._trendMode = false;
+        toggle.style.color = "#999";
+        toggle.textContent = "Tools ▾";
+        var shapes = gd.layout.shapes ? gd.layout.shapes.slice() : [];
+        shapes.push({type:"line", x0:clicks[0].x, x1:clicks[1].x, y0:clicks[0].y, y1:clicks[1].y,
+          xref:"x", yref:"y", line:{color:"#4fc3f7", width:2}, opacity:0.9, _trend:true});
+        Plotly.relayout(gd, {shapes:shapes});
+        clicks = [];
+      }
+      return;
+    }
+
+    if(gd._fibMode){
+      clicks.push(yVal);
+      if(clicks.length === 1){
+        toggle.textContent = "Fib: pick low";
+      }
+      if(clicks.length === 2){
+        gd._fibMode = false;
+        toggle.style.color = "#999";
+        toggle.textContent = "Tools ▾";
+        var high = Math.max(clicks[0], clicks[1]);
+        var low = Math.min(clicks[0], clicks[1]);
+        var diff = high - low;
+        var shapes = gd.layout.shapes ? gd.layout.shapes.slice() : [];
+        var annots = gd.layout.annotations ? gd.layout.annotations.slice() : [];
+        for(var i=0; i<fibLevels.length; i++){
+          var yVal = high - diff * fibLevels[i];
+          shapes.push({type:"line", x0:0, x1:1, xref:"paper", y0:yVal, y1:yVal,
+            yref:"y", line:{color:fibColors[i], width:1.5, dash:"dot"}, opacity:0.8, _fib:true});
+          annots.push({x:0.01, xref:"paper", y:yVal, yref:"y",
+            text:(fibLevels[i]*100).toFixed(1)+"% "+yVal.toFixed(2),
+            showarrow:false, font:{color:fibColors[i], size:10, family:"monospace"},
+            bgcolor:"rgba(13,17,23,0.8)", borderpad:2, xanchor:"left", _fib:true});
+        }
+        Plotly.relayout(gd, {shapes:shapes, annotations:annots});
+        clicks = [];
+      }
     }
   });
 })();
