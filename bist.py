@@ -64,15 +64,28 @@ def _fetch_weekly_change(sym):
         first_close = closes[0]
         last_close = closes[-1]
         change = ((last_close - first_close) / first_close) * 100
+        volume = float(df["Volume"].iloc[-1]) if "Volume" in df else 0
         return {
             "symbol": sym,
             "price": f"{last_close:.2f}",
             "change": round(change, 2),
             "pos": change >= 0,
             "spark": _spark_points(closes),
+            "volume": volume,
+            "volume_str": _format_volume(volume),
         }
     except Exception:
         return None
+
+
+def _format_volume(v):
+    if v >= 1e9:
+        return f"{v / 1e9:.1f}B"
+    if v >= 1e6:
+        return f"{v / 1e6:.1f}M"
+    if v >= 1e3:
+        return f"{v / 1e3:.0f}K"
+    return f"{v:.0f}"
 
 
 def bist_top_movers():
@@ -83,7 +96,8 @@ def bist_top_movers():
         results = list(pool.map(_fetch_weekly_change, TOP_MOVERS_SYMBOLS))
     items = [r for r in results if r]
     items.sort(key=lambda x: x["change"], reverse=True)
-    data = {"gainers": items[:5], "losers": items[-5:][::-1]}
+    most_active = sorted(items, key=lambda x: x["volume"], reverse=True)[:5]
+    data = {"gainers": items[:5], "losers": items[-5:][::-1], "active": most_active}
     _movers_cache["data"] = data
     _movers_cache["time"] = now
     return data
