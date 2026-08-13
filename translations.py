@@ -66,6 +66,11 @@ TRANSLATIONS = {
         "market_status": "Market status",
         "borsa_istanbul": "Borsa Istanbul",
         "indicators": "Indicators",
+        "top_gainers": "Top gainers",
+        "top_losers": "Top losers",
+        "most_active": "Most active",
+        "days": "days",
+        "today": "Today",
     },
     "tr": {
         "site_name": "Borsa Dostu",
@@ -134,5 +139,10 @@ TRANSLATIONS = {
         "market_status": "Piyasa durumu",
         "borsa_istanbul": "Borsa İstanbul",
         "indicators": "Göstergeler",
+        "top_gainers": "En çok kazandıranlar",
+        "top_losers": "En çok kaybedenler",
+        "most_active": "En yüksek hacim",
+        "days": "gün",
+        "today": "Bugün",
     },
 }

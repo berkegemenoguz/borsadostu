@@ -111,7 +111,7 @@
 
     <div class="movers-section">
         <div class="movers-col">
-            <div class="section-title" style="margin-top:16px;">{{ t.top_gainers if t.top_gainers is defined else 'Top gainers' }} <span style="color:#999;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1px;">7 {{ t.days if t.days is defined else 'days' }}</span></div>
+            <div class="section-title" style="margin-top:16px;">{{ t.top_gainers }} <span style="color:#999;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1px;">7 {{ t.days }}</span></div>
             {% for item in movers.gainers %}
             <a href="/bist/{{ item.symbol }}" class="mover-row" style="text-decoration:none;">
                 <span class="mover-sym">{{ item.symbol }}</span>
@@ -124,7 +124,7 @@
             {% endfor %}
         </div>
         <div class="movers-col">
-            <div class="section-title" style="margin-top:16px;">{{ t.top_losers if t.top_losers is defined else 'Top losers' }} <span style="color:#999;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1px;">7 {{ t.days if t.days is defined else 'days' }}</span></div>
+            <div class="section-title" style="margin-top:16px;">{{ t.top_losers }} <span style="color:#999;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1px;">7 {{ t.days }}</span></div>
             {% for item in movers.losers %}
             <a href="/bist/{{ item.symbol }}" class="mover-row" style="text-decoration:none;">
                 <span class="mover-sym">{{ item.symbol }}</span>
@@ -138,7 +138,7 @@
         </div>
         {% if movers.active %}
         <div class="movers-col">
-            <div class="section-title" style="margin-top:16px;">{{ t.most_active if t.most_active is defined else 'Most active' }} <span style="color:#999;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1px;">{{ t.today if t.today is defined else 'Today' }}</span></div>
+            <div class="section-title" style="margin-top:16px;">{{ t.most_active }} <span style="color:#999;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1px;">{{ t.today }}</span></div>
             {% for item in movers.active %}
             <a href="/bist/{{ item.symbol }}" class="mover-row" style="text-decoration:none;">
                 <span class="mover-sym">{{ item.symbol }}</span>
