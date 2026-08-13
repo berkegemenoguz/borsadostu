@@ -42,20 +42,34 @@ def bist_ticker_veri():
     return items
 
 
+def _spark_points(closes, width=60, height=20, pad=2):
+    lo, hi = min(closes), max(closes)
+    span = (hi - lo) or 1
+    n = len(closes) - 1 or 1
+    pts = []
+    for i, c in enumerate(closes):
+        x = pad + (i / n) * (width - 2 * pad)
+        y = (height - pad) - ((c - lo) / span) * (height - 2 * pad)
+        pts.append(f"{x:.1f},{y:.1f}")
+    return " ".join(pts)
+
+
 def _fetch_weekly_change(sym):
     try:
         t = bp.Ticker(sym)
         df = t.history(period="5g", interval="1d")
         if df.empty or len(df) < 2:
             return None
-        first_close = df["Close"].iloc[0]
-        last_close = df["Close"].iloc[-1]
+        closes = df["Close"].tolist()
+        first_close = closes[0]
+        last_close = closes[-1]
         change = ((last_close - first_close) / first_close) * 100
         return {
             "symbol": sym,
             "price": f"{last_close:.2f}",
             "change": round(change, 2),
             "pos": change >= 0,
+            "spark": _spark_points(closes),
         }
     except Exception:
         return None

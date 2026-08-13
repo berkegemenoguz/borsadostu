@@ -65,6 +65,7 @@
     .mover-row:first-of-type { border-top: 1px solid #e0e0e0; }
     .mover-row:hover { background: #f5f5f5; }
     .mover-sym { font-family: 'Cabinet Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #000; min-width: 70px; }
+    .mover-spark { width: 60px; height: 20px; flex-shrink: 0; opacity: 0.8; }
     .mover-price { font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; color: #666; }
     .mover-change { font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; font-weight: 600; min-width: 80px; text-align: right; }
 
@@ -114,6 +115,9 @@
             {% for item in movers.gainers %}
             <a href="/bist/{{ item.symbol }}" class="mover-row" style="text-decoration:none;">
                 <span class="mover-sym">{{ item.symbol }}</span>
+                {% if item.spark %}
+                <svg class="mover-spark" viewBox="0 0 60 20" preserveAspectRatio="none"><polyline points="{{ item.spark }}" fill="none" stroke="#16a34a" stroke-width="1.5"/></svg>
+                {% endif %}
                 <span class="mover-price">{{ item.price }} ₺</span>
                 <span class="mover-change green">▲{{ "%.2f"|format(item.change|abs) }}%</span>
             </a>
@@ -124,6 +128,9 @@
             {% for item in movers.losers %}
             <a href="/bist/{{ item.symbol }}" class="mover-row" style="text-decoration:none;">
                 <span class="mover-sym">{{ item.symbol }}</span>
+                {% if item.spark %}
+                <svg class="mover-spark" viewBox="0 0 60 20" preserveAspectRatio="none"><polyline points="{{ item.spark }}" fill="none" stroke="#dc2626" stroke-width="1.5"/></svg>
+                {% endif %}
                 <span class="mover-price">{{ item.price }} ₺</span>
                 <span class="mover-change red">▼{{ "%.2f"|format(item.change|abs) }}%</span>
             </a>
