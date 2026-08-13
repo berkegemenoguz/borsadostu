@@ -9,7 +9,7 @@
 
 {% if kontratlar %}
 <div class="card">
-    <h2>{{ t.contracts }} <span style="color:#8b949e; font-size:14px; font-weight:400;">({{ kontratlar|length }})</span></h2>
+    <h2>{{ t.contracts }} <span style="color:#999; font-size:14px; font-weight:400;">({{ kontratlar|length }})</span></h2>
     <div style="overflow-x:auto;">
         <table>
             <thead>
@@ -59,29 +59,29 @@
             <button type="submit" class="btn">{{ t.generate }}</button>
         </div>
         <div class="ind-toggle" onclick="var b=document.getElementById('ind-body');var a=document.getElementById('ind-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='▼';}else{b.style.display='none';a.textContent='▶';}">
-            <span id="ind-arrow" style="color:#8b949e;font-size:13px;">{{ '▼' if active_indicators else '▶' }}</span>
-            <span style="font-size:15px;font-weight:600;color:#f0f6fc;">{{ t.indicators }}</span>
+            <span id="ind-arrow" style="color:#999;font-size:13px;">{{ '▼' if active_indicators else '▶' }}</span>
+            <span style="font-size:15px;font-weight:700;color:#000;font-family:'Cabinet Grotesk',sans-serif;">{{ t.indicators }}</span>
             {% if active_indicators %}
-            <span style="font-size:12px;color:#6e7681;margin-left:4px;">{{ active_indicators|join(', ') }}</span>
+            <span style="font-size:12px;color:#999;margin-left:4px;">{{ active_indicators|join(', ') }}</span>
             {% endif %}
         </div>
-        <div id="ind-body" style="display:{{ 'block' if active_indicators else 'none' }};background:#0d1117;border:1px solid #30363d;border-radius:0 0 8px 8px;border-top:1px solid #30363d;padding:14px;">
+        <div id="ind-body" style="display:{{ 'block' if active_indicators else 'none' }};background:#fafafa;border:1px solid #e0e0e0;border-top:1px solid #e0e0e0;padding:14px;">
             <div style="display:flex;flex-direction:column;gap:14px;">
                 <div>
-                    <div style="font-size:11px;color:#6e7681;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Overlay</div>
+                    <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Overlay</div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         {% for key, label in [("sma20","SMA 20"),("sma50","SMA 50"),("sma200","SMA 200"),("ema20","EMA 20"),("ema50","EMA 50"),("bb","Bollinger"),("sr","S/R")] %}
-                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#c9d1d9;cursor:pointer;">
+                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#333;cursor:pointer;">
                             <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
                         </label>
                         {% endfor %}
                     </div>
                 </div>
                 <div>
-                    <div style="font-size:11px;color:#6e7681;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Panel</div>
+                    <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Panel</div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         {% for key, label in [("rsi","RSI 14"),("macd","MACD")] %}
-                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#c9d1d9;cursor:pointer;">
+                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#333;cursor:pointer;">
                             <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
                         </label>
                         {% endfor %}

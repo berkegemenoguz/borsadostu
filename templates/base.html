@@ -5,33 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Borsa Dostu{% endblock %}</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0d1117;
-            color: #c9d1d9;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background: #f2f2f2;
+            color: #333;
+            font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             min-height: 100vh;
         }
-        a { color: #58a6ff; text-decoration: none; }
+        a { color: #333; text-decoration: none; }
         a:hover { text-decoration: underline; }
 
         .navbar {
-            background: #161b22;
-            border-bottom: 1px solid #30363d;
-            padding: 12px 20px;
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 8px 20px;
             display: flex;
             align-items: center;
-            gap: 24px;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-left a { color: #999; font-size: 13px; font-weight: 600; padding-bottom: 8px; border-bottom: 2px solid transparent; }
+        .nav-left a:hover { color: #000; text-decoration: none; }
+        .nav-left a.nav-active { color: #000; border-bottom-color: #000; }
         .navbar .brand {
-            font-size: 18px;
-            font-weight: 700;
-            color: #f0f6fc;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            font-size: 17px;
+            font-weight: 800;
+            color: #000;
+            letter-spacing: 0.3px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
         }
-        .navbar a { color: #8b949e; font-size: 14px; padding-bottom: 14px; border-bottom: 2px solid transparent; }
-        .navbar a:hover { color: #f0f6fc; text-decoration: none; }
-        .navbar a.nav-active { color: #f0f6fc; border-bottom-color: #58a6ff; }
+        .navbar .brand span { color: #666; }
 
         .container {
             max-width: 1200px;
@@ -39,43 +49,46 @@
             padding: 24px 20px;
         }
 
-        h1 { font-size: 24px; color: #f0f6fc; margin-bottom: 16px; }
-        h2 { font-size: 18px; color: #f0f6fc; margin-bottom: 12px; }
+        h1 { font-family: 'Cabinet Grotesk', sans-serif; font-size: 24px; color: #000; margin-bottom: 16px; font-weight: 800; }
+        h2 { font-family: 'Cabinet Grotesk', sans-serif; font-size: 18px; color: #000; margin-bottom: 12px; font-weight: 700; }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 6px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
             overflow: hidden;
             font-size: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         }
         th {
-            background: #1c2128;
-            color: #8b949e;
+            background: #fafafa;
+            color: #999;
             text-align: left;
             padding: 10px 12px;
             font-weight: 600;
-            border-bottom: 1px solid #30363d;
+            border-bottom: 1px solid #e0e0e0;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
         }
         td {
             padding: 8px 12px;
-            border-bottom: 1px solid #21262d;
+            border-bottom: 1px solid #f0f0f0;
         }
-        tr:hover { background: #1c2128; }
+        tr:hover { background: #fafafa; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .mono { font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; }
-        .green { color: #26a69a; }
-        .red { color: #ef5350; }
+        .green { color: #16a34a; }
+        .red { color: #dc2626; }
 
         .card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
             padding: 20px;
             margin-bottom: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         }
 
         .form-row {
@@ -85,81 +98,116 @@
             align-items: flex-end;
             margin-bottom: 16px;
         }
-        .ind-toggle { display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 14px; background:#0d1117; border:1px solid #30363d; border-radius:8px; user-select:none; margin-top:4px; }
+        .ind-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 14px;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            user-select: none;
+            margin-top: 4px;
+        }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
-        .form-group label { font-size: 12px; color: #8b949e; }
+        .form-group label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1px; }
         .form-group input, .form-group select {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            color: #c9d1d9;
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #000;
             padding: 8px 12px;
-            border-radius: 6px;
             font-size: 14px;
             height: 38px;
+            font-family: 'Satoshi', sans-serif;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .form-group input:hover, .form-group select:hover {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+            border-color: #bbb;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 1px #000;
         }
         .btn {
-            background: #238636;
-            color: #fff;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 6px;
+            background: #fff;
+            color: #000;
+            border: 1px solid #ddd;
+            padding: 8px 24px;
             font-size: 14px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
             height: 38px;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s, border-color 0.2s;
         }
-        .btn:hover { background: #2ea043; }
+        .btn:hover {
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+            border-color: #bbb;
+        }
 
         .search-box {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            color: #c9d1d9;
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #000;
             padding: 8px 12px;
-            border-radius: 6px;
             font-size: 14px;
             width: 100%;
             max-width: 300px;
             margin-bottom: 12px;
+            font-family: 'Satoshi', sans-serif;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }
 
         .info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
+            gap: 0;
             margin-bottom: 16px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         }
         .info-item {
-            background: #1c2128;
-            padding: 12px;
-            border-radius: 6px;
+            padding: 14px 16px;
+            border-right: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+            cursor: default;
         }
-        .info-item .label { font-size: 12px; color: #8b949e; }
-        .info-item .value { font-size: 18px; font-weight: 600; color: #f0f6fc; margin-top: 4px; }
+        .info-item:hover { background: #f5f5f5; }
+        .info-item .label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1px; }
+        .info-item .value { font-size: 18px; font-weight: 700; color: #000; margin-top: 4px; font-variant-numeric: tabular-nums; }
 
         .chart-container { width: 100%; min-height: 500px; margin-top: 16px; margin-left: 0; padding-left: 0; overflow-x: auto; }
         .chart-container .js-plotly-plot { margin-left: 0 !important; }
 
-        .error { background: #3d1f28; border: 1px solid #f85149; color: #f85149; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+        .error { background: #fef2f2; border: 1px solid #dc2626; color: #dc2626; padding: 12px; margin-bottom: 16px; }
 
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        .badge { display: inline-block; padding: 2px 8px; font-size: 12px; }
 
-        .footer { border-top: 1px solid #30363d; padding: 20px; margin-top: 40px; text-align: center; font-size: 12px; color: #8b949e; }
-        .footer a { color: #8b949e; }
-        .footer a:hover { color: #f0f6fc; }
+        .footer { border-top: 1px solid #e0e0e0; padding: 20px; margin-top: 40px; text-align: center; font-size: 12px; color: #bbb; }
+        .footer a { color: #999; }
+        .footer a:hover { color: #000; }
         .footer-links { display: flex; justify-content: center; gap: 16px; margin-top: 6px; }
 
-        .lang-switch { display: flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: #8b949e; }
+        .lang-switch { display: flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: #999; }
         .lang-switch span { cursor: pointer; }
-        .lang-switch span.active { color: #f0f6fc; font-weight: 600; }
-        .lang-toggle { position: relative; width: 36px; height: 18px; background: #30363d; border-radius: 9px; cursor: pointer; border: none; padding: 0; }
-        .lang-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #58a6ff; border-radius: 50%; transition: transform 0.2s; }
+        .lang-switch span.active { color: #000; font-weight: 700; }
+        .lang-toggle { position: relative; width: 36px; height: 18px; background: #ddd; border-radius: 9px; cursor: pointer; border: none; padding: 0; }
+        .lang-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #000; border-radius: 50%; transition: transform 0.2s; }
         .lang-toggle.en::after { transform: translateX(18px); }
 
         .loading-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(13,17,23,0.85);
+            background: rgba(255,255,255,0.85);
             z-index: 9999;
             flex-direction: column;
             align-items: center;
@@ -168,12 +216,12 @@
         }
         .loading-overlay.active { display: flex; }
         .spinner-candle { display: flex; align-items: flex-end; gap: 6px; height: 56px; }
-        .c1 { width: 8px; height: 20px; border-radius: 2px; transform-origin: bottom; background: #3fb950; animation: c1 1.2s ease-in-out infinite; }
-        .c2 { width: 8px; height: 32px; border-radius: 2px; transform-origin: bottom; background: #f85149; animation: c2 1.2s ease-in-out infinite; }
-        .c3 { width: 8px; height: 14px; border-radius: 2px; transform-origin: bottom; background: #3fb950; animation: c3 1.2s ease-in-out infinite; }
-        .c4 { width: 8px; height: 28px; border-radius: 2px; transform-origin: bottom; background: #f85149; animation: c4 1.2s ease-in-out infinite; }
-        .c5 { width: 8px; height: 38px; border-radius: 2px; transform-origin: bottom; background: #3fb950; animation: c5 1.2s ease-in-out infinite; }
-        .loading-text { color: #8b949e; font-size: 14px; }
+        .c1 { width: 8px; height: 20px; transform-origin: bottom; background: #16a34a; animation: c1 1.2s ease-in-out infinite; }
+        .c2 { width: 8px; height: 32px; transform-origin: bottom; background: #dc2626; animation: c2 1.2s ease-in-out infinite; }
+        .c3 { width: 8px; height: 14px; transform-origin: bottom; background: #16a34a; animation: c3 1.2s ease-in-out infinite; }
+        .c4 { width: 8px; height: 28px; transform-origin: bottom; background: #dc2626; animation: c4 1.2s ease-in-out infinite; }
+        .c5 { width: 8px; height: 38px; transform-origin: bottom; background: #16a34a; animation: c5 1.2s ease-in-out infinite; }
+        .loading-text { color: #999; font-size: 14px; }
         @keyframes c1 { 0%,100% { transform: scaleY(0.85); opacity: 0.4; } 50% { transform: scaleY(1.25); opacity: 1; } }
         @keyframes c2 { 0%,20% { transform: scaleY(0.85); opacity: 0.4; } 50% { transform: scaleY(1.25); opacity: 1; } 80%,100% { transform: scaleY(0.85); opacity: 0.4; } }
         @keyframes c3 { 0%,30% { transform: scaleY(0.85); opacity: 0.4; } 60% { transform: scaleY(1.25); opacity: 1; } 90%,100% { transform: scaleY(0.85); opacity: 0.4; } }
@@ -189,9 +237,11 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="/" class="brand">Borsa Dostu</a>
-        <a href="/bist" class="{{ 'nav-active' if request.path.startswith('/bist') }}">BIST</a>
-        <a href="/viop" class="{{ 'nav-active' if request.path.startswith('/viop') }}">VIOP</a>
+        <div class="nav-left">
+            <a href="/bist" class="{{ 'nav-active' if request.path.startswith('/bist') }}">BIST</a>
+            <a href="/viop" class="{{ 'nav-active' if request.path.startswith('/viop') }}">VIOP</a>
+        </div>
+        <a href="/" class="brand">Borsa <span>Dostu</span></a>
         <div class="lang-switch">
             <span class="{{ 'active' if lang == 'tr' }}" onclick="window.location='/lang/tr'">TR</span>
             <button class="lang-toggle {{ lang }}" onclick="window.location='/lang/{{ 'tr' if lang == 'en' else 'en' }}'"></button>

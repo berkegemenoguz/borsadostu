@@ -20,47 +20,57 @@
 <style>
     .home-container { max-width: 900px; margin: 0 auto; }
 
-    .ticker-bar { background: #161b22; border-bottom: 1px solid #30363d; overflow: hidden; height: 34px; width: 100%; }
+    .ticker-bar { background: #fff; border-bottom: 1px solid #e0e0e0; overflow: hidden; height: 34px; width: 100%; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
     .ticker-track { display: flex; gap: 32px; white-space: nowrap; padding: 8px 0; animation: scroll-ticker 25s linear infinite; }
-    .ticker-item { font-size: 13px; color: #8b949e; font-family: "SF Mono", "Fira Code", monospace; display: flex; gap: 6px; }
-    .ticker-item .up { color: #3fb950; }
-    .ticker-item .down { color: #f85149; }
+    .ticker-item { font-size: 13px; color: #666; font-family: "SF Mono", "Fira Code", monospace; display: flex; gap: 6px; }
+    .ticker-item .up { color: #16a34a; }
+    .ticker-item .down { color: #dc2626; }
     @keyframes scroll-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
     .hero { text-align: center; padding: 48px 0 20px; }
-    .hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 8px; }
-    .hero h1 span { background: linear-gradient(135deg, #58a6ff, #3fb950); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .hero p { color: #8b949e; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; font-weight: 500; }
+    .hero h1 { font-family: 'Cabinet Grotesk', sans-serif; font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 8px; color: #000; }
+    .hero h1 span { color: #666; }
+    .hero p { color: #999; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; font-weight: 500; }
 
-    .stats-row { display: flex; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
-    .stat { flex: 1; text-align: center; padding: 14px; border-right: 1px solid #30363d; }
+    .stats-row { display: flex; border: 1px solid #e0e0e0; overflow: hidden; margin-bottom: 24px; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .stat { flex: 1; text-align: center; padding: 14px; border-right: 1px solid #eee; }
     .stat:last-child { border-right: none; }
-    .stat .val { font-size: 22px; font-weight: 800; color: #f0f6fc; letter-spacing: -0.5px; }
-    .stat .lbl { font-size: 10px; color: #8b949e; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
+    .stat .val { font-family: 'Cabinet Grotesk', sans-serif; font-size: 22px; font-weight: 800; color: #000; letter-spacing: -0.5px; }
+    .stat .lbl { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
 
-    .sep { height: 1px; background: linear-gradient(to right, transparent, #30363d, transparent); margin: 8px 0; }
+    .sep { height: 1px; background: linear-gradient(to right, transparent, #ddd, transparent); margin: 8px 0; }
 
     .home-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
-    .home-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 22px; text-decoration: none; transition: border-color 0.2s, transform 0.2s; display: block; }
-    .home-card:hover { border-color: #58a6ff; transform: translateY(-2px); text-decoration: none; }
-    .home-card .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 4px; margin-bottom: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
-    .home-card:first-child .tag { color: #58a6ff; background: rgba(88,166,255,0.1); }
-    .home-card:last-child .tag { color: #3fb950; background: rgba(63,185,80,0.1); }
-    .home-card h2 { font-size: 18px; color: #f0f6fc; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
-    .home-card p { color: #8b949e; font-size: 13px; line-height: 1.6; }
-    .home-card .arrow { display: inline-block; margin-top: 12px; font-size: 13px; color: #58a6ff; font-weight: 500; }
+    .home-card { background: #fff; border: 1px solid #e0e0e0; padding: 22px; text-decoration: none; transition: box-shadow 0.2s, transform 0.2s; display: block; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .home-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.15); transform: translateY(-2px); text-decoration: none; }
+    .home-card .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px; margin-bottom: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .home-card:first-child .tag { color: #1d4ed8; background: #eff6ff; }
+    .home-card:last-child .tag { color: #16a34a; background: #f0fdf4; }
+    .home-card h2 { font-family: 'Cabinet Grotesk', sans-serif; font-size: 18px; color: #000; font-weight: 700; margin-bottom: 6px; }
+    .home-card p { color: #666; font-size: 13px; line-height: 1.6; }
+    .home-card .arrow { display: inline-block; margin-top: 12px; font-size: 13px; color: #000; font-weight: 600; }
 
-    .section-title { font-size: 15px; font-weight: 700; color: #f0f6fc; letter-spacing: -0.3px; margin-top: 32px; margin-bottom: 14px; }
+    .section-title { font-family: 'Cabinet Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: #000; letter-spacing: -0.3px; margin-top: 32px; margin-bottom: 14px; }
 
-    .market-bar { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px; margin-bottom: 8px; }
+    .market-bar { background: #fff; border: 1px solid #e0e0e0; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 14px; margin-bottom: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
     .market-left { display: flex; align-items: center; gap: 8px; }
-    .market-dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; animation: blink 2s ease-in-out infinite; }
+    .market-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; animation: blink 2s ease-in-out infinite; }
     @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-    .market-label { font-size: 13px; color: #f0f6fc; font-weight: 600; }
-    .market-sub { font-size: 12px; color: #8b949e; }
+    .market-label { font-size: 13px; color: #000; font-weight: 600; }
+    .market-sub { font-size: 12px; color: #999; }
+
+    .movers-section { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 8px; }
+    .movers-col { display: flex; flex-direction: column; }
+    .mover-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fff; border: 1px solid #e0e0e0; border-top: none; transition: background 0.15s; }
+    .mover-row:first-of-type { border-top: 1px solid #e0e0e0; }
+    .mover-row:hover { background: #f5f5f5; }
+    .mover-sym { font-family: 'Cabinet Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #000; min-width: 70px; }
+    .mover-price { font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; color: #666; }
+    .mover-change { font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; font-weight: 600; min-width: 80px; text-align: right; }
 
     @media (max-width: 768px) {
         .home-cards { grid-template-columns: 1fr; }
+        .movers-section { grid-template-columns: 1fr; }
         .hero h1 { font-size: 28px; }
         .stat .val { font-size: 18px; }
     }
@@ -95,6 +105,33 @@
         </a>
     </div>
 
+    {% if movers and movers.gainers %}
+    <div class="sep" style="margin-top:24px"></div>
+
+    <div class="movers-section">
+        <div class="movers-col">
+            <div class="section-title" style="margin-top:16px;">{{ t.top_gainers if t.top_gainers is defined else 'Top gainers' }} <span style="color:#999;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1px;">7 {{ t.days if t.days is defined else 'days' }}</span></div>
+            {% for item in movers.gainers %}
+            <a href="/bist/{{ item.symbol }}" class="mover-row" style="text-decoration:none;">
+                <span class="mover-sym">{{ item.symbol }}</span>
+                <span class="mover-price">{{ item.price }} ₺</span>
+                <span class="mover-change green">▲{{ "%.2f"|format(item.change|abs) }}%</span>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="movers-col">
+            <div class="section-title" style="margin-top:16px;">{{ t.top_losers if t.top_losers is defined else 'Top losers' }} <span style="color:#999;font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1px;">7 {{ t.days if t.days is defined else 'days' }}</span></div>
+            {% for item in movers.losers %}
+            <a href="/bist/{{ item.symbol }}" class="mover-row" style="text-decoration:none;">
+                <span class="mover-sym">{{ item.symbol }}</span>
+                <span class="mover-price">{{ item.price }} ₺</span>
+                <span class="mover-change red">▼{{ "%.2f"|format(item.change|abs) }}%</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="sep" style="margin-top:24px"></div>
 
     <div class="section-title">{{ t.market_status }}</div>
@@ -117,7 +154,7 @@
     if (open) {
         el.textContent = "Open · Closes at 18:00";
     } else {
-        document.querySelector(".market-dot").style.background = "#8b949e";
+        document.querySelector(".market-dot").style.background = "#ccc";
         document.querySelector(".market-dot").style.animation = "none";
         el.textContent = "Closed · Opens Mon-Fri 10:00";
     }

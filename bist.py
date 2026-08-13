@@ -7,7 +7,14 @@ from graphicgenerator import grafik_ciz_html
 
 
 TICKER_SYMBOLS = ["THYAO", "TUPRS", "ASELS", "GARAN", "EREGL", "KCHOL", "AKBNK", "SASA", "BIMAS", "SAHOL"]
+TOP_MOVERS_SYMBOLS = [
+    "THYAO", "TUPRS", "ASELS", "GARAN", "EREGL", "KCHOL", "AKBNK", "SASA",
+    "BIMAS", "SAHOL", "SISE", "TOASO", "FROTO", "PETKM", "TCELL", "ENKAI",
+    "TAVHL", "HEKTS", "KOZAL", "KOZAA", "PGSUS", "VESTL", "ARCLK", "MGROS",
+    "TKFEN", "TTKOM", "AEFES", "DOHOL", "EKGYO", "ISCTR",
+]
 _ticker_cache = {"data": [], "time": 0}
+_movers_cache = {"data": [], "time": 0}
 CACHE_TTL = 300
 
 
@@ -33,6 +40,39 @@ def bist_ticker_veri():
     _ticker_cache["data"] = items
     _ticker_cache["time"] = now
     return items
+
+
+def _fetch_weekly_change(sym):
+    try:
+        t = bp.Ticker(sym)
+        df = t.history(period="5g", interval="1d")
+        if df.empty or len(df) < 2:
+            return None
+        first_close = df["Close"].iloc[0]
+        last_close = df["Close"].iloc[-1]
+        change = ((last_close - first_close) / first_close) * 100
+        return {
+            "symbol": sym,
+            "price": f"{last_close:.2f}",
+            "change": round(change, 2),
+            "pos": change >= 0,
+        }
+    except Exception:
+        return None
+
+
+def bist_top_movers():
+    now = time.time()
+    if _movers_cache["data"] and (now - _movers_cache["time"]) < CACHE_TTL:
+        return _movers_cache["data"]
+    with ThreadPoolExecutor(max_workers=15) as pool:
+        results = list(pool.map(_fetch_weekly_change, TOP_MOVERS_SYMBOLS))
+    items = [r for r in results if r]
+    items.sort(key=lambda x: x["change"], reverse=True)
+    data = {"gainers": items[:5], "losers": items[-5:][::-1]}
+    _movers_cache["data"] = data
+    _movers_cache["time"] = now
+    return data
 
 
 def bist_sirketler():

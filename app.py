@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, make_response, g
-from bist import bist_sirketler, bist_detay_veri, bist_ticker_veri
+from bist import bist_sirketler, bist_detay_veri, bist_ticker_veri, bist_top_movers
 from viop import viop_ozet_veri, viop_detay_veri, kontrat_tarih_araligi
 from graphicgenerator import grafik_ciz_html
 from translations import TRANSLATIONS
@@ -32,7 +32,8 @@ def set_lang(code):
 @app.route("/")
 def home():
     ticker_data = bist_ticker_veri()
-    return render_template("home.html", ticker_data=ticker_data)
+    movers = bist_top_movers()
+    return render_template("home.html", ticker_data=ticker_data, movers=movers)
 
 
 @app.route("/bist")

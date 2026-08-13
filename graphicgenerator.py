@@ -44,16 +44,16 @@ FIB_SCRIPT_EMBED = """<script>
   var toggle = document.createElement("a");
   toggle.className = "modebar-btn";
   toggle.setAttribute("data-title","Tools");
-  toggle.style.cssText = "cursor:pointer;color:#999;font-size:13px;padding:4px 8px;user-select:none;";
+  toggle.style.cssText = "cursor:pointer;color:#666;font-size:13px;padding:4px 8px;user-select:none;";
   toggle.textContent = "Tools ▾";
 
   var menu = document.createElement("div");
-  menu.style.cssText = "display:none;position:absolute;right:0;top:100%;background:#161b22;border:1px solid #333;border-radius:4px;min-width:140px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.5);";
+  menu.style.cssText = "display:none;position:absolute;right:0;top:100%;background:#fff;border:1px solid #ddd;min-width:140px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.12);";
 
   var fibBtn = document.createElement("a");
-  fibBtn.style.cssText = "display:block;padding:8px 12px;color:#999;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
+  fibBtn.style.cssText = "display:block;padding:8px 12px;color:#333;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
   fibBtn.textContent = "Fibonacci";
-  fibBtn.onmouseenter = function(){ fibBtn.style.background="#1e2a38"; };
+  fibBtn.onmouseenter = function(){ fibBtn.style.background="#f5f5f5"; };
   fibBtn.onmouseleave = function(){ fibBtn.style.background="transparent"; };
   fibBtn.onclick = function(){
     menu.style.display = "none";
@@ -69,9 +69,9 @@ FIB_SCRIPT_EMBED = """<script>
   menu.appendChild(fibBtn);
 
   var trendBtn = document.createElement("a");
-  trendBtn.style.cssText = "display:block;padding:8px 12px;color:#999;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
+  trendBtn.style.cssText = "display:block;padding:8px 12px;color:#333;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
   trendBtn.textContent = "Trend Line";
-  trendBtn.onmouseenter = function(){ trendBtn.style.background="#1e2a38"; };
+  trendBtn.onmouseenter = function(){ trendBtn.style.background="#f5f5f5"; };
   trendBtn.onmouseleave = function(){ trendBtn.style.background="transparent"; };
   trendBtn.onclick = function(){
     menu.style.display = "none";
@@ -84,9 +84,9 @@ FIB_SCRIPT_EMBED = """<script>
   menu.appendChild(trendBtn);
 
   var clearBtn = document.createElement("a");
-  clearBtn.style.cssText = "display:block;padding:8px 12px;color:#ef5350;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;border-top:1px solid #333;";
+  clearBtn.style.cssText = "display:block;padding:8px 12px;color:#dc2626;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;border-top:1px solid #eee;";
   clearBtn.textContent = "Clear All";
-  clearBtn.onmouseenter = function(){ clearBtn.style.background="#1e2a38"; };
+  clearBtn.onmouseenter = function(){ clearBtn.style.background="#f5f5f5"; };
   clearBtn.onmouseleave = function(){ clearBtn.style.background="transparent"; };
   clearBtn.onclick = function(){
     menu.style.display = "none";
@@ -122,7 +122,7 @@ FIB_SCRIPT_EMBED = """<script>
       }
       if(clicks.length === 2){
         gd._trendMode = false;
-        toggle.style.color = "#999";
+        toggle.style.color = "#666";
         toggle.textContent = "Tools ▾";
         var shapes = gd.layout.shapes ? gd.layout.shapes.slice() : [];
         shapes.push({type:"line", x0:clicks[0].x, x1:clicks[1].x, y0:clicks[0].y, y1:clicks[1].y,
@@ -140,7 +140,7 @@ FIB_SCRIPT_EMBED = """<script>
       }
       if(clicks.length === 2){
         gd._fibMode = false;
-        toggle.style.color = "#999";
+        toggle.style.color = "#666";
         toggle.textContent = "Tools ▾";
         var high = Math.max(clicks[0], clicks[1]);
         var low = Math.min(clicks[0], clicks[1]);
@@ -154,7 +154,7 @@ FIB_SCRIPT_EMBED = """<script>
           annots.push({x:0.01, xref:"paper", y:yVal, yref:"y",
             text:(fibLevels[i]*100).toFixed(1)+"% "+yVal.toFixed(2),
             showarrow:false, font:{color:fibColors[i], size:10, family:"monospace"},
-            bgcolor:"rgba(13,17,23,0.8)", borderpad:2, xanchor:"left", _fib:true});
+            bgcolor:"rgba(255,255,255,0.9)", borderpad:2, xanchor:"left", _fib:true});
         }
         Plotly.relayout(gd, {shapes:shapes, annotations:annots});
         clicks = [];
@@ -404,43 +404,43 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
 
     fig.update_layout(
         title=f"{sembol}  |  {start} → {end}  |  {interval} candlestick",
-        plot_bgcolor="#0d1117",
-        paper_bgcolor="#0d1117",
-        font_color="#aaaaaa",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+        font_color="#666666",
         xaxis_rangeslider_visible=False,
         yaxis_title="Price (TL)",
         yaxis2_title="Volume",
         **({"yaxis" + str(rsi_row) + "_title": "RSI",
             "yaxis" + str(rsi_row): dict(range=[0, 100])} if has_rsi else {}),
         **({"yaxis" + str(macd_row) + "_title": "MACD"} if has_macd else {}),
-        legend=dict(bgcolor="#161b22", bordercolor="#333333"),
+        legend=dict(bgcolor="#ffffff", bordercolor="#e0e0e0"),
         height=700 + extra_panels * 120,
         margin=dict(b=100),
         annotations=[dict(
             text=ozet, xref="paper", yref="paper",
             x=0.5, y=-0.15, showarrow=False,
-            font=dict(size=10, family="monospace", color="white"),
-            bgcolor="#161b22", bordercolor="#333333", borderpad=6,
+            font=dict(size=10, family="monospace", color="#333"),
+            bgcolor="#f5f5f5", bordercolor="#e0e0e0", borderpad=6,
         )] + sr_annotations,
         newshape=dict(line_color="#ffab00", line_width=2),
         dragmode="pan",
         hovermode="x unified",
         hoverlabel=dict(
-            bgcolor="#161b22",
-            bordercolor="#333333",
-            font=dict(size=12, family="monospace", color="#ffffff"),
+            bgcolor="#fff",
+            bordercolor="#e0e0e0",
+            font=dict(size=12, family="monospace", color="#333"),
         ),
     )
 
     fig.update_xaxes(
         spikemode="across", spikethickness=1,
-        spikecolor="#555555", spikedash="dot",
+        spikecolor="#ccc", spikedash="dot",
         tickvals=tick_positions,
         ticktext=tick_labels,
     )
     fig.update_yaxes(
         spikemode="across", spikethickness=1,
-        spikecolor="#555555", spikedash="dot",
+        spikecolor="#ccc", spikedash="dot",
         fixedrange=False,
     )
 
@@ -450,7 +450,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
         suffix = "" if i == 1 else str(i)
         axes += ["xaxis" + suffix, "yaxis" + suffix]
     for ax in axes:
-        fig.update_layout(**{ax: dict(gridcolor="#1e2a38", zeroline=False)})
+        fig.update_layout(**{ax: dict(gridcolor="#f0f0f0", zeroline=False)})
 
     return fig
 
