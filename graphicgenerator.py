@@ -161,6 +161,8 @@ FIB_SCRIPT_EMBED = """<script>
       }
     }
   });
+
+  gd.addEventListener("wheel", function(e){ e.preventDefault(); }, {passive: false});
 })();
 </script>"""
 
