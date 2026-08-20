@@ -211,28 +211,26 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
 
     has_rsi = bool(indicators and "rsi" in indicators)
     has_macd = bool(indicators and "macd" in indicators)
-    extra_panels = int(has_rsi) + int(has_macd)
+    has_atr = bool(indicators and "atr" in indicators)
+    extra_panels = int(has_rsi) + int(has_macd) + int(has_atr)
 
-    if extra_panels == 2:
-        fig = make_subplots(
-            rows=4, cols=1, shared_xaxes=True,
-            vertical_spacing=0.03,
-            row_heights=[0.50, 0.16, 0.17, 0.17],
-        )
+    total_rows = 2 + extra_panels
+    if extra_panels == 0:
+        row_heights = [0.75, 0.25]
     elif extra_panels == 1:
-        fig = make_subplots(
-            rows=3, cols=1, shared_xaxes=True,
-            vertical_spacing=0.03,
-            row_heights=[0.60, 0.20, 0.20],
-        )
+        row_heights = [0.60, 0.20, 0.20]
+    elif extra_panels == 2:
+        row_heights = [0.50, 0.16, 0.17, 0.17]
     else:
-        fig = make_subplots(
-            rows=2, cols=1, shared_xaxes=True,
-            vertical_spacing=0.03,
-            row_heights=[0.75, 0.25],
-        )
+        row_heights = [0.45, 0.13] + [0.14] * extra_panels
 
-    rsi_row = macd_row = next_row = 3
+    fig = make_subplots(
+        rows=total_rows, cols=1, shared_xaxes=True,
+        vertical_spacing=0.03,
+        row_heights=row_heights,
+    )
+
+    rsi_row = macd_row = atr_row = next_row = 3
 
     if chart_type == "line":
         fig.add_trace(go.Scatter(
@@ -336,6 +334,16 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
                     line=dict(color=color, width=1.5),
                 ), row=1, col=1)
 
+    if indicators and "vwap" in indicators:
+        cumvol = df["Volume"].cumsum()
+        cumtp = ((df["High"] + df["Low"] + df["Close"]) / 3 * df["Volume"]).cumsum()
+        vwap = cumtp / cumvol
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=vwap,
+            mode="lines", name="VWAP",
+            line=dict(color="#ff6f00", width=1.5, dash="dash"),
+        ), row=1, col=1)
+
     fig.add_trace(go.Scatter(
         x=df["Idx"], y=(df["High"] + df["Low"]) / 2,
         mode="markers", marker=dict(size=12, opacity=0),
@@ -396,6 +404,21 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
             line=dict(color="#ff9800", width=1.5),
         ), row=macd_row, col=1)
 
+    if has_atr:
+        atr_row = next_row
+        next_row += 1
+        tr = pd.concat([
+            df["High"] - df["Low"],
+            (df["High"] - df["Close"].shift()).abs(),
+            (df["Low"] - df["Close"].shift()).abs(),
+        ], axis=1).max(axis=1)
+        atr = tr.rolling(window=14).mean()
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=atr,
+            mode="lines", name="ATR 14",
+            line=dict(color="#f57c00", width=1.5),
+        ), row=atr_row, col=1)
+
     degisim_renk = "#26a69a" if degisim >= 0 else "#ef5350"
     fig.add_hline(
         y=kapanis, line_dash="dash", line_color=degisim_renk,
@@ -427,6 +450,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         **({"yaxis" + str(rsi_row) + "_title": "RSI",
             "yaxis" + str(rsi_row): dict(range=[0, 100])} if has_rsi else {}),
         **({"yaxis" + str(macd_row) + "_title": "MACD"} if has_macd else {}),
+        **({"yaxis" + str(atr_row) + "_title": "ATR"} if has_atr else {}),
         legend=dict(bgcolor="#ffffff", bordercolor="#e0e0e0"),
         height=700 + extra_panels * 120,
         margin=dict(b=100),
