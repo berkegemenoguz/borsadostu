@@ -24,6 +24,8 @@ PLOTLY_CONFIG = {
     "scrollZoom": True,
     "displaylogo": False,
     "responsive": True,
+    "displayModeBar": True,
+    "doubleClick": "reset",
 }
 
 FIB_SCRIPT_EMBED = """<script>
@@ -32,7 +34,31 @@ FIB_SCRIPT_EMBED = """<script>
   if(!gd || !gd.data){ setTimeout(waitForPlot, 200); return; }
 
   var mb = gd.querySelector(".modebar");
-  if(mb){ mb.style.transform="scale(1.3)"; mb.style.transformOrigin="top right"; }
+  if(mb){
+    mb.style.transform = window.innerWidth <= 768 ? "scale(1.6)" : "scale(1.3)";
+    mb.style.transformOrigin = "top right";
+  }
+
+  if(window.innerWidth <= 768){
+    var upd = {
+      "title.text": "",
+      "legend.orientation": "h",
+      "legend.x": 0, "legend.y": 1, "legend.xanchor": "left", "legend.yanchor": "bottom",
+      "legend.bgcolor": "rgba(0,0,0,0)", "legend.bordercolor": "rgba(0,0,0,0)",
+      "margin.l": 46, "margin.r": 10, "margin.t": 58
+    };
+    Object.keys(gd.layout).forEach(function(k){
+      if(k.indexOf("xaxis") !== 0) return;
+      var tv = gd.layout[k].tickvals, tt = gd.layout[k].ticktext;
+      if(!tv || !tv.length) return;
+      var step = Math.ceil(tv.length / 4), nv = [], nt = [];
+      for(var i = 0; i < tv.length; i += step){ nv.push(tv[i]); nt.push(tt[i]); }
+      upd[k + ".tickvals"] = nv;
+      upd[k + ".ticktext"] = nt;
+      upd[k + ".tickangle"] = -45;
+    });
+    Plotly.relayout(gd, upd);
+  }
 
   var fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0];
   var fibColors = ["#ef5350","#ff9800","#ffeb3b","#4caf50","#2196f3","#9c27b0","#26a69a"];
