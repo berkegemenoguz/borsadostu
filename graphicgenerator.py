@@ -240,7 +240,8 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
     has_macd = bool(indicators and "macd" in indicators)
     has_atr = bool(indicators and "atr" in indicators)
     has_adx = bool(indicators and "adx" in indicators)
-    extra_panels = int(has_rsi) + int(has_macd) + int(has_atr) + int(has_adx)
+    has_obv = bool(indicators and "obv" in indicators)
+    extra_panels = int(has_rsi) + int(has_macd) + int(has_atr) + int(has_adx) + int(has_obv)
 
     total_rows = 2 + extra_panels
     if extra_panels == 0:
@@ -258,7 +259,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         row_heights=row_heights,
     )
 
-    rsi_row = macd_row = atr_row = adx_row = next_row = 3
+    rsi_row = macd_row = atr_row = adx_row = obv_row = next_row = 3
 
     if chart_type == "line":
         fig.add_trace(go.Scatter(
@@ -361,6 +362,52 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
                     mode="lines", name=label,
                     line=dict(color=color, width=1.5),
                 ), row=1, col=1)
+
+    if indicators and "supertrend" in indicators:
+        st_period, st_mult = 10, 3.0
+        st_tr = pd.concat([
+            df["High"] - df["Low"],
+            (df["High"] - df["Close"].shift()).abs(),
+            (df["Low"] - df["Close"].shift()).abs(),
+        ], axis=1).max(axis=1)
+        st_atr = st_tr.rolling(window=st_period).mean()
+        hl2 = (df["High"] + df["Low"]) / 2
+
+        upper_l = (hl2 + st_mult * st_atr).tolist()
+        lower_l = (hl2 - st_mult * st_atr).tolist()
+        close_l = df["Close"].tolist()
+        n = len(df)
+        nan = float("nan")
+        f_up, f_lo, trend = [nan] * n, [nan] * n, [1] * n
+
+        for i in range(1, n):
+            if upper_l[i] != upper_l[i]:
+                continue
+            pu = f_up[i - 1] if f_up[i - 1] == f_up[i - 1] else upper_l[i]
+            pl = f_lo[i - 1] if f_lo[i - 1] == f_lo[i - 1] else lower_l[i]
+            f_up[i] = upper_l[i] if (upper_l[i] < pu or close_l[i - 1] > pu) else pu
+            f_lo[i] = lower_l[i] if (lower_l[i] > pl or close_l[i - 1] < pl) else pl
+            if close_l[i] > f_up[i]:
+                trend[i] = 1
+            elif close_l[i] < f_lo[i]:
+                trend[i] = -1
+            else:
+                trend[i] = trend[i - 1]
+
+        st_up = [f_lo[i] if trend[i] == 1 else nan for i in range(n)]
+        st_dn = [f_up[i] if trend[i] == -1 else nan for i in range(n)]
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=st_up,
+            mode="lines", name="Supertrend ↑",
+            line=dict(color="#26a69a", width=2),
+            connectgaps=False,
+        ), row=1, col=1)
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=st_dn,
+            mode="lines", name="Supertrend ↓",
+            line=dict(color="#ef5350", width=2),
+            connectgaps=False,
+        ), row=1, col=1)
 
     if indicators and "vwap" in indicators:
         cumvol = df["Volume"].cumsum()
@@ -484,6 +531,19 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
                       annotation_text="25", annotation_font_color="#999",
                       annotation_font_size=9)
 
+    if has_obv:
+        obv_row = next_row
+        next_row += 1
+        chg = df["Close"].diff()
+        direction = (chg > 0).astype(int) - (chg < 0).astype(int)
+        obv = (direction * df["Volume"]).fillna(0).cumsum()
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=obv,
+            mode="lines", name="OBV",
+            line=dict(color="#0288d1", width=1.5),
+            fill="tozeroy", fillcolor="rgba(2,136,209,0.08)",
+        ), row=obv_row, col=1)
+
     degisim_renk = "#26a69a" if degisim >= 0 else "#ef5350"
     fig.add_hline(
         y=kapanis, line_dash="dash", line_color=degisim_renk,
@@ -508,6 +568,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         **({"yaxis" + str(macd_row) + "_title": "MACD"} if has_macd else {}),
         **({"yaxis" + str(atr_row) + "_title": "ATR"} if has_atr else {}),
         **({"yaxis" + str(adx_row) + "_title": "ADX"} if has_adx else {}),
+        **({"yaxis" + str(obv_row) + "_title": "OBV"} if has_obv else {}),
         legend=dict(bgcolor="#ffffff", bordercolor="#e0e0e0"),
         height=700 + extra_panels * 120,
         margin=dict(b=100),
