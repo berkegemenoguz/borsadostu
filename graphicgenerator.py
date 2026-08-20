@@ -212,7 +212,8 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
     has_rsi = bool(indicators and "rsi" in indicators)
     has_macd = bool(indicators and "macd" in indicators)
     has_atr = bool(indicators and "atr" in indicators)
-    extra_panels = int(has_rsi) + int(has_macd) + int(has_atr)
+    has_adx = bool(indicators and "adx" in indicators)
+    extra_panels = int(has_rsi) + int(has_macd) + int(has_atr) + int(has_adx)
 
     total_rows = 2 + extra_panels
     if extra_panels == 0:
@@ -230,7 +231,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         row_heights=row_heights,
     )
 
-    rsi_row = macd_row = atr_row = next_row = 3
+    rsi_row = macd_row = atr_row = adx_row = next_row = 3
 
     if chart_type == "line":
         fig.add_trace(go.Scatter(
@@ -419,6 +420,43 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
             line=dict(color="#f57c00", width=1.5),
         ), row=atr_row, col=1)
 
+    if has_adx:
+        adx_row = next_row
+        next_row += 1
+        plus_dm = df["High"].diff()
+        minus_dm = -df["Low"].diff()
+        plus_dm = plus_dm.where((plus_dm > minus_dm) & (plus_dm > 0), 0.0)
+        minus_dm = minus_dm.where((minus_dm > plus_dm) & (minus_dm > 0), 0.0)
+        tr = pd.concat([
+            df["High"] - df["Low"],
+            (df["High"] - df["Close"].shift()).abs(),
+            (df["Low"] - df["Close"].shift()).abs(),
+        ], axis=1).max(axis=1)
+        atr14 = tr.rolling(window=14).mean()
+        plus_di = 100 * (plus_dm.rolling(window=14).mean() / atr14)
+        minus_di = 100 * (minus_dm.rolling(window=14).mean() / atr14)
+        dx = 100 * ((plus_di - minus_di).abs() / (plus_di + minus_di))
+        adx = dx.rolling(window=14).mean()
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=adx,
+            mode="lines", name="ADX 14",
+            line=dict(color="#7c4dff", width=1.5),
+        ), row=adx_row, col=1)
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=plus_di,
+            mode="lines", name="+DI",
+            line=dict(color="#26a69a", width=1, dash="dot"),
+        ), row=adx_row, col=1)
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=minus_di,
+            mode="lines", name="-DI",
+            line=dict(color="#ef5350", width=1, dash="dot"),
+        ), row=adx_row, col=1)
+        fig.add_hline(y=25, line_dash="dot", line_color="#999",
+                      line_width=1, opacity=0.5, row=adx_row, col=1,
+                      annotation_text="25", annotation_font_color="#999",
+                      annotation_font_size=9)
+
     degisim_renk = "#26a69a" if degisim >= 0 else "#ef5350"
     fig.add_hline(
         y=kapanis, line_dash="dash", line_color=degisim_renk,
@@ -451,6 +489,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
             "yaxis" + str(rsi_row): dict(range=[0, 100])} if has_rsi else {}),
         **({"yaxis" + str(macd_row) + "_title": "MACD"} if has_macd else {}),
         **({"yaxis" + str(atr_row) + "_title": "ATR"} if has_atr else {}),
+        **({"yaxis" + str(adx_row) + "_title": "ADX"} if has_adx else {}),
         legend=dict(bgcolor="#ffffff", bordercolor="#e0e0e0"),
         height=700 + extra_panels * 120,
         margin=dict(b=100),
