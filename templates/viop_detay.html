@@ -106,5 +106,37 @@
     </div>
     {% endif %}
 </div>
+
+{% if chart_summary %}
+<div class="card">
+    <h2>{{ t.chart_summary }}</h2>
+    <div class="chart-summary">
+        <div class="cs-item">
+            <div class="label">{{ t.open }}</div>
+            <div class="value mono">{{ chart_summary.open }} TL</div>
+        </div>
+        <div class="cs-item">
+            <div class="label">{{ t.close }}</div>
+            <div class="value mono">{{ chart_summary.close }} TL</div>
+        </div>
+        <div class="cs-item">
+            <div class="label">{{ t.high }}</div>
+            <div class="value mono green">{{ chart_summary.high }} <small>{{ chart_summary.high_time }}</small></div>
+        </div>
+        <div class="cs-item">
+            <div class="label">{{ t.low }}</div>
+            <div class="value mono red">{{ chart_summary.low }} <small>{{ chart_summary.low_time }}</small></div>
+        </div>
+        <div class="cs-item">
+            <div class="label">{{ t.change }}</div>
+            <div class="value mono {{ 'green' if chart_summary.pos else 'red' }}">{{ chart_summary.change_tl }} TL <small class="pct">{{ chart_summary.change_pct }}%</small></div>
+        </div>
+        <div class="cs-item">
+            <div class="label">{{ t.volume }}</div>
+            <div class="value mono">{{ chart_summary.volume }}</div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endif %}
 {% endblock %}

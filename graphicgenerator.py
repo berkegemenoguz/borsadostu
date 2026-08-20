@@ -191,7 +191,8 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
 
     df = df.sort_values("Datetime").reset_index(drop=True)
     df["Idx"] = range(len(df))
-    tick_positions = list(range(0, len(df), max(1, len(df) // 10)))
+    tick_step = max(1, len(df) // 10)
+    tick_positions = list(range(0, len(df), tick_step))
     tick_labels = [df["Datetime"].iloc[i].strftime("%m-%d %H:%M") for i in tick_positions]
 
     acilis = df.iloc[0]["Open"]
@@ -466,16 +467,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         annotation_font_size=10,
     )
 
-    degisim_ok = "▲" if degisim >= 0 else "▼"
     fark_isaret = "+" if fark_tl >= 0 else ""
-    ozet = (
-        f"Open: {acilis:.2f} TL  |  Close: {kapanis:.2f} TL  |  "
-        f"High: {en_yuksek:.2f} ({en_yuksek_saat})  |  "
-        f"Low: {en_dusuk:.2f} ({en_dusuk_saat})  |  "
-        f"Change: {fark_isaret}{fark_tl:.2f} TL  |  "
-        f"Vol: {hacim_format(toplam_hacim)}  |  "
-        f"{degisim_ok} {degisim:+.2f}%"
-    )
 
     fig.update_layout(
         title=f"{sembol}  |  {start} → {end}  |  {interval} candlestick",
@@ -493,12 +485,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         legend=dict(bgcolor="#ffffff", bordercolor="#e0e0e0"),
         height=700 + extra_panels * 120,
         margin=dict(b=100),
-        annotations=[dict(
-            text=ozet, xref="paper", yref="paper",
-            x=0.5, y=-0.15, showarrow=False,
-            font=dict(size=10, family="monospace", color="#333"),
-            bgcolor="#f5f5f5", bordercolor="#e0e0e0", borderpad=6,
-        )] + sr_annotations,
+        annotations=sr_annotations,
         newshape=dict(line_color="#ffab00", line_width=2),
         dragmode="pan",
         hovermode="x unified",
@@ -529,20 +516,34 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
     for ax in axes:
         fig.update_layout(**{ax: dict(gridcolor="#f0f0f0", zeroline=False)})
 
-    return fig
+    summary = {
+        "open": f"{acilis:.2f}",
+        "close": f"{kapanis:.2f}",
+        "high": f"{en_yuksek:.2f}",
+        "high_time": en_yuksek_saat,
+        "low": f"{en_dusuk:.2f}",
+        "low_time": en_dusuk_saat,
+        "change_tl": f"{fark_isaret}{fark_tl:.2f}",
+        "change_pct": f"{degisim:+.2f}",
+        "volume": hacim_format(toplam_hacim),
+        "pos": degisim >= 0,
+    }
+
+    return fig, summary
 
 
 def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick"):
-    fig = _build_figure(sembol, start, end, interval, indicators, chart_type)
-    if fig is None:
-        return None
+    result = _build_figure(sembol, start, end, interval, indicators, chart_type)
+    if result is None:
+        return None, None
 
+    fig, summary = result
     chart_div = fig.to_html(
         full_html=False,
         include_plotlyjs=False,
         config=PLOTLY_CONFIG,
         div_id="grafik-container",
     )
-    return chart_div + FIB_SCRIPT_EMBED
+    return chart_div + FIB_SCRIPT_EMBED, summary
 
 

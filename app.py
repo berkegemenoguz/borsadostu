@@ -51,6 +51,7 @@ def bist_detay(sembol):
     sembol = sembol.upper()
     veri = bist_detay_veri(sembol)
     chart_html = None
+    chart_summary = None
 
     indicators = request.args.getlist("ind")
     chart_type = request.args.get("chart_type", "candlestick")
@@ -59,7 +60,7 @@ def bist_detay(sembol):
         end = request.args.get("end", start)
         interval = request.args.get("interval", "5m")
         try:
-            chart_html = grafik_ciz_html(sembol, start, end, interval, indicators or None, chart_type)
+            chart_html, chart_summary = grafik_ciz_html(sembol, start, end, interval, indicators or None, chart_type)
         except Exception as e:
             veri["hata"] = f"Chart error: {e}"
 
@@ -78,7 +79,7 @@ def bist_detay(sembol):
 
     return render_template("bist_detay.html",
                            sembol=sembol, veri=veri, history=history_rows,
-                           chart_html=chart_html,
+                           chart_html=chart_html, chart_summary=chart_summary,
                            start=request.args.get("start", "2026-06-07"),
                            end=request.args.get("end", "2026-07-07"),
                            interval=request.args.get("interval", "5m"),
@@ -99,6 +100,7 @@ def viop_detay(base):
     _, tum_df = viop_ozet_veri()
     veri = viop_detay_veri(base, tum_df)
     chart_html = None
+    chart_summary = None
 
     indicators = request.args.getlist("ind")
     chart_type = request.args.get("chart_type", "candlestick")
@@ -109,7 +111,7 @@ def viop_detay(base):
         interval = request.args.get("interval", "1h")
         if start and end:
             try:
-                chart_html = grafik_ciz_html(sembol_param, start, end, interval, indicators or None, chart_type)
+                chart_html, chart_summary = grafik_ciz_html(sembol_param, start, end, interval, indicators or None, chart_type)
             except Exception as e:
                 veri["hata"] = f"Chart error: {e}"
 
@@ -126,7 +128,7 @@ def viop_detay(base):
 
     return render_template("viop_detay.html",
                            base=base, veri=veri, kontratlar=kontrat_rows,
-                           semboller=veri["semboller"], chart_html=chart_html,
+                           semboller=veri["semboller"], chart_html=chart_html, chart_summary=chart_summary,
                            interval=request.args.get("interval", "1h"),
                            chart_type=chart_type,
                            active_indicators=indicators)
