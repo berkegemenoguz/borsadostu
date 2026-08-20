@@ -136,10 +136,20 @@ FIB_SCRIPT_EMBED = """<script>
   gd.on("plotly_click", function(data){
     if(!gd._fibMode && !gd._trendMode) return;
     var pt = data.points[0];
-    if(pt.curveNumber > 1) return;
-    var yVal = pt.y != null ? pt.y : (pt.close != null ? pt.close : pt.high);
-    if(yVal == null || isNaN(yVal)) return;
+    // accept a click from any trace drawn in the price panel (row 1); with
+    // "x unified" hovermode Plotly may resolve the click to an overlay line
+    // rather than the candles, so anchor by bar index instead of by trace.
+    var tr = gd.data[pt.curveNumber] || {};
+    if((tr.yaxis || "y") !== "y") return;
+
     var xVal = pt.pointIndex;
+    var bar = (gd.calcdata[0] || [])[xVal];
+    if(!bar) return;
+    // candlestick calcdata carries max/min/yc; line & area charts only carry y
+    var barHi = bar.max != null ? bar.max : bar.y;
+    var barLo = bar.min != null ? bar.min : bar.y;
+    var yVal  = bar.yc  != null ? bar.yc  : bar.y;
+    if(yVal == null || isNaN(yVal)) return;
 
     if(gd._trendMode){
       clicks.push({x: xVal, y: yVal});
@@ -160,7 +170,7 @@ FIB_SCRIPT_EMBED = """<script>
     }
 
     if(gd._fibMode){
-      clicks.push(yVal);
+      clicks.push({hi: barHi, lo: barLo});
       if(clicks.length === 1){
         toggle.textContent = "Fib: pick low";
       }
@@ -168,17 +178,18 @@ FIB_SCRIPT_EMBED = """<script>
         gd._fibMode = false;
         toggle.style.color = "#666";
         toggle.textContent = "Tools ▾";
-        var high = Math.max(clicks[0], clicks[1]);
-        var low = Math.min(clicks[0], clicks[1]);
+        // anchor to the true extremes of the two picked bars, whatever order they were picked in
+        var high = Math.max(clicks[0].hi, clicks[1].hi);
+        var low = Math.min(clicks[0].lo, clicks[1].lo);
         var diff = high - low;
         var shapes = gd.layout.shapes ? gd.layout.shapes.slice() : [];
         var annots = gd.layout.annotations ? gd.layout.annotations.slice() : [];
         for(var i=0; i<fibLevels.length; i++){
-          var yVal = high - diff * fibLevels[i];
-          shapes.push({type:"line", x0:0, x1:1, xref:"paper", y0:yVal, y1:yVal,
+          var lvl = high - diff * fibLevels[i];
+          shapes.push({type:"line", x0:0, x1:1, xref:"paper", y0:lvl, y1:lvl,
             yref:"y", line:{color:fibColors[i], width:1.5, dash:"dot"}, opacity:0.8, _fib:true});
-          annots.push({x:0.01, xref:"paper", y:yVal, yref:"y",
-            text:(fibLevels[i]*100).toFixed(1)+"% "+yVal.toFixed(2),
+          annots.push({x:0.01, xref:"paper", y:lvl, yref:"y",
+            text:(fibLevels[i]*100).toFixed(1)+"% "+lvl.toFixed(2),
             showarrow:false, font:{color:fibColors[i], size:10, family:"monospace"},
             bgcolor:"rgba(255,255,255,0.9)", borderpad:2, xanchor:"left", _fib:true});
         }
@@ -424,7 +435,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
     fig.add_trace(go.Scatter(
         x=df["Idx"], y=(df["High"] + df["Low"]) / 2,
         mode="markers", marker=dict(size=12, opacity=0),
-        showlegend=False, hoverinfo="skip", name="_click_helper",
+        showlegend=False, hoverinfo="none", name="_click_helper",
         customdata=df[["High", "Low"]].values.tolist(),
     ), row=1, col=1)
 
