@@ -38,6 +38,13 @@
     .stat .val { font-family: 'Cabinet Grotesk', sans-serif; font-size: 22px; font-weight: 800; color: #000; letter-spacing: -0.5px; }
     .stat .lbl { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
 
+    .rates-row { display: flex; gap: 0; border: 1px solid #e0e0e0; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.08); margin-top: 12px; }
+    .rate-item { flex: 1; text-align: center; padding: 12px 8px; border-right: 1px solid #eee; }
+    .rate-item:last-child { border-right: none; }
+    .rate-sym { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; margin-bottom: 2px; }
+    .rate-val { font-family: 'Cabinet Grotesk', sans-serif; font-size: 18px; font-weight: 800; color: #000; letter-spacing: -0.5px; }
+    .rate-unit { font-size: 12px; color: #999; font-weight: 400; }
+
     .sep { height: 1px; background: linear-gradient(to right, transparent, #ddd, transparent); margin: 8px 0; }
 
     .home-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
@@ -88,6 +95,17 @@
         <div class="stat"><div class="val">47</div><div class="lbl">{{ t.futures_count.split()[1] if ' ' in t.futures_count else 'Futures' }}</div></div>
         <div class="stat"><div class="val">{{ t.live_data.split()[0] }}</div><div class="lbl">{{ t.live_data.split()[1] if ' ' in t.live_data else 'Data' }}</div></div>
     </div>
+
+    {% if rates %}
+    <div class="rates-row">
+        {% for r in rates %}
+        <div class="rate-item">
+            <div class="rate-sym">{{ r.symbol }}</div>
+            <div class="rate-val">{{ r.price }} <span class="rate-unit">{{ r.unit }}</span></div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <div class="sep"></div>
 
