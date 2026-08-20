@@ -56,6 +56,15 @@
                     <option value="1h" {{ 'selected' if interval == '1h' }}>1h</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label>{{ t.chart_type if t.chart_type is defined else 'Chart type' }}</label>
+                <div class="chart-type-btns">
+                    <button type="button" class="ct-btn{{ ' active' if chart_type == 'candlestick' }}" onclick="document.getElementById('ct-input').value='candlestick';document.querySelectorAll('.ct-btn').forEach(function(b){b.classList.remove('active')});this.classList.add('active');">&#x1F5E7;</button>
+                    <button type="button" class="ct-btn{{ ' active' if chart_type == 'line' }}" onclick="document.getElementById('ct-input').value='line';document.querySelectorAll('.ct-btn').forEach(function(b){b.classList.remove('active')});this.classList.add('active');">&#x2015;</button>
+                    <button type="button" class="ct-btn{{ ' active' if chart_type == 'area' }}" onclick="document.getElementById('ct-input').value='area';document.querySelectorAll('.ct-btn').forEach(function(b){b.classList.remove('active')});this.classList.add('active');">&#x25B3;</button>
+                </div>
+                <input type="hidden" name="chart_type" id="ct-input" value="{{ chart_type }}">
+            </div>
             <button type="submit" class="btn">{{ t.generate }}</button>
         </div>
         <div class="ind-toggle" onclick="var b=document.getElementById('ind-body');var a=document.getElementById('ind-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='▼';}else{b.style.display='none';a.textContent='▶';}">

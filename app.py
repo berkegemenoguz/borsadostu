@@ -53,12 +53,13 @@ def bist_detay(sembol):
     chart_html = None
 
     indicators = request.args.getlist("ind")
+    chart_type = request.args.get("chart_type", "candlestick")
     start = request.args.get("start")
     if start:
         end = request.args.get("end", start)
         interval = request.args.get("interval", "5m")
         try:
-            chart_html = grafik_ciz_html(sembol, start, end, interval, indicators or None)
+            chart_html = grafik_ciz_html(sembol, start, end, interval, indicators or None, chart_type)
         except Exception as e:
             veri["hata"] = f"Chart error: {e}"
 
@@ -81,7 +82,8 @@ def bist_detay(sembol):
                            start=request.args.get("start", "2026-06-07"),
                            end=request.args.get("end", "2026-07-07"),
                            interval=request.args.get("interval", "5m"),
-                           active_indicators=indicators)
+                           active_indicators=indicators,
+                           chart_type=chart_type)
 
 
 @app.route("/viop")
@@ -99,6 +101,7 @@ def viop_detay(base):
     chart_html = None
 
     indicators = request.args.getlist("ind")
+    chart_type = request.args.get("chart_type", "candlestick")
     sembol_param = request.args.get("sembol")
     if sembol_param:
         kod = veri["kodlar"].get(sembol_param, "")
@@ -106,7 +109,7 @@ def viop_detay(base):
         interval = request.args.get("interval", "1h")
         if start and end:
             try:
-                chart_html = grafik_ciz_html(sembol_param, start, end, interval, indicators or None)
+                chart_html = grafik_ciz_html(sembol_param, start, end, interval, indicators or None, chart_type)
             except Exception as e:
                 veri["hata"] = f"Chart error: {e}"
 
@@ -125,6 +128,7 @@ def viop_detay(base):
                            base=base, veri=veri, kontratlar=kontrat_rows,
                            semboller=veri["semboller"], chart_html=chart_html,
                            interval=request.args.get("interval", "1h"),
+                           chart_type=chart_type,
                            active_indicators=indicators)
 
 

@@ -176,7 +176,7 @@ SMA_EMA_COLORS = {
 }
 
 
-def _build_figure(sembol, start, end, interval="5m", indicators=None):
+def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick"):
     hisse = bp.Ticker(sembol)
     df = hisse.history(start=start, end=end, interval=interval)
 
@@ -234,14 +234,28 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
 
     rsi_row = macd_row = next_row = 3
 
-    fig.add_trace(go.Candlestick(
-        x=df["Idx"],
-        open=df["Open"], high=df["High"],
-        low=df["Low"], close=df["Close"],
-        increasing_line_color="#26a69a", increasing_fillcolor="#26a69a",
-        decreasing_line_color="#ef5350", decreasing_fillcolor="#ef5350",
-        name="Price",
-    ), row=1, col=1)
+    if chart_type == "line":
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=df["Close"],
+            mode="lines", name="Price",
+            line=dict(color="#2196f3", width=1.5),
+        ), row=1, col=1)
+    elif chart_type == "area":
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=df["Close"],
+            mode="lines", name="Price",
+            line=dict(color="#2196f3", width=1.5),
+            fill="tozeroy", fillcolor="rgba(33,150,243,0.08)",
+        ), row=1, col=1)
+    else:
+        fig.add_trace(go.Candlestick(
+            x=df["Idx"],
+            open=df["Open"], high=df["High"],
+            low=df["Low"], close=df["Close"],
+            increasing_line_color="#26a69a", increasing_fillcolor="#26a69a",
+            decreasing_line_color="#ef5350", decreasing_fillcolor="#ef5350",
+            name="Price",
+        ), row=1, col=1)
 
     if indicators and "bb" in indicators:
         bb_mid = df["Close"].rolling(window=20).mean()
@@ -455,8 +469,8 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None):
     return fig
 
 
-def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None):
-    fig = _build_figure(sembol, start, end, interval, indicators)
+def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick"):
+    fig = _build_figure(sembol, start, end, interval, indicators, chart_type)
     if fig is None:
         return None
 
