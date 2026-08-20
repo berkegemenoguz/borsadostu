@@ -103,6 +103,33 @@ def bist_top_movers():
     return data
 
 
+_xu100_cache = {"data": None, "time": 0}
+
+
+def bist_xu100():
+    now = time.time()
+    if _xu100_cache["data"] and (now - _xu100_cache["time"]) < CACHE_TTL:
+        return _xu100_cache["data"]
+    try:
+        t = bp.Ticker("XU100")
+        info = t.info
+        df = t.history(period="5g", interval="1h")
+        closes = df["Close"].tolist() if not df.empty else []
+        data = {
+            "value": f"{info.get('last', 0):,.2f}",
+            "change": info.get("change_percent", 0),
+            "pos": info.get("change_percent", 0) >= 0,
+            "high": f"{info.get('high', 0):,.2f}",
+            "low": f"{info.get('low', 0):,.2f}",
+            "spark": _spark_points(closes, width=200, height=40) if closes else "",
+        }
+        _xu100_cache["data"] = data
+        _xu100_cache["time"] = now
+        return data
+    except Exception:
+        return None
+
+
 def bist_sirketler():
     sirketler = bp.companies()
     df = pd.DataFrame(sirketler)

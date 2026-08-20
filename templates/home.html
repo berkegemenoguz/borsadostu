@@ -27,16 +27,6 @@
     .ticker-item .down { color: #dc2626; }
     @keyframes scroll-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-    .hero { text-align: center; padding: 48px 0 20px; }
-    .hero h1 { font-family: 'Cabinet Grotesk', sans-serif; font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 8px; color: #000; }
-    .hero h1 span { color: #666; }
-    .hero p { color: #999; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; font-weight: 500; }
-
-    .stats-row { display: flex; border: 1px solid #e0e0e0; overflow: hidden; margin-bottom: 24px; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-    .stat { flex: 1; text-align: center; padding: 14px; border-right: 1px solid #eee; }
-    .stat:last-child { border-right: none; }
-    .stat .val { font-family: 'Cabinet Grotesk', sans-serif; font-size: 22px; font-weight: 800; color: #000; letter-spacing: -0.5px; }
-    .stat .lbl { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
 
     .rates-row { display: flex; gap: 0; border: 1px solid #e0e0e0; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.08); margin-top: 12px; }
     .rate-item { flex: 1; text-align: center; padding: 12px 8px; border-right: 1px solid #eee; }
@@ -44,6 +34,15 @@
     .rate-sym { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; margin-bottom: 2px; }
     .rate-val { font-family: 'Cabinet Grotesk', sans-serif; font-size: 18px; font-weight: 800; color: #000; letter-spacing: -0.5px; }
     .rate-unit { font-size: 12px; color: #999; font-weight: 400; }
+
+    .xu100-card { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #e0e0e0; padding: 18px 24px; margin-top: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .xu100-left { display: flex; flex-direction: column; gap: 2px; }
+    .xu100-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
+    .xu100-value { font-family: 'Cabinet Grotesk', sans-serif; font-size: 28px; font-weight: 800; color: #000; letter-spacing: -1px; }
+    .xu100-change { font-family: "SF Mono", "Fira Code", monospace; font-size: 14px; font-weight: 600; }
+    .xu100-range { display: flex; gap: 14px; margin-top: 4px; font-size: 11px; color: #999; font-family: "SF Mono", "Fira Code", monospace; }
+    .xu100-right { flex: 1; max-width: 240px; margin-left: 24px; }
+    .xu100-spark { width: 100%; height: 50px; }
 
     .sep { height: 1px; background: linear-gradient(to right, transparent, #ddd, transparent); margin: 8px 0; }
 
@@ -79,21 +78,24 @@
     @media (max-width: 768px) {
         .home-cards { grid-template-columns: 1fr; }
         .movers-section { grid-template-columns: 1fr; }
-        .hero h1 { font-size: 28px; }
-        .stat .val { font-size: 18px; }
+        .xu100-value { font-size: 22px; }
     }
 </style>
 
 <div class="home-container">
-    <div class="hero">
-        <h1>Borsa <span>Dostu</span></h1>
-        <p>{{ t.stock_analysis }}</p>
-    </div>
-
-    <div class="stats-row">
-        <div class="stat"><div class="val">540+</div><div class="lbl">{{ t.companies_count.split()[1] if ' ' in t.companies_count else 'Companies' }}</div></div>
-        <div class="stat"><div class="val">47</div><div class="lbl">{{ t.futures_count.split()[1] if ' ' in t.futures_count else 'Futures' }}</div></div>
-        <div class="stat"><div class="val">{{ t.live_data.split()[0] }}</div><div class="lbl">{{ t.live_data.split()[1] if ' ' in t.live_data else 'Data' }}</div></div>
+    <div class="home-cards" style="margin-top:16px;">
+        <a href="/bist" class="home-card">
+            <div class="tag">{{ t.equities }}</div>
+            <h2>BIST</h2>
+            <p>{{ t.bist_about }}</p>
+            <span class="arrow">{{ t.explore }} →</span>
+        </a>
+        <a href="/viop" class="home-card">
+            <div class="tag">{{ t.futures }}</div>
+            <h2>VIOP</h2>
+            <p>{{ t.viop_about }}</p>
+            <span class="arrow">{{ t.explore }} →</span>
+        </a>
     </div>
 
     {% if rates %}
@@ -107,22 +109,33 @@
     </div>
     {% endif %}
 
-    <div class="sep"></div>
-
-    <div class="home-cards">
-        <a href="/bist" class="home-card">
-            <div class="tag">{{ t.equities }}</div>
-            <h2>BIST</h2>
-            <p>{{ t.bist_card_desc }}</p>
-            <span class="arrow">{{ t.explore }} →</span>
-        </a>
-        <a href="/viop" class="home-card">
-            <div class="tag">{{ t.futures }}</div>
-            <h2>VIOP</h2>
-            <p>{{ t.viop_card_desc }}</p>
-            <span class="arrow">{{ t.explore }} →</span>
-        </a>
+    {% if xu100 %}
+    <div class="xu100-card">
+        <div class="xu100-left">
+            <div class="xu100-label">BIST 100</div>
+            <div class="xu100-value">{{ xu100.value }}</div>
+            <div class="xu100-change {{ 'green' if xu100.pos else 'red' }}">{{ "▲" if xu100.pos else "▼" }}{{ "%.2f"|format(xu100.change|abs) }}%</div>
+            <div class="xu100-range">
+                <span>L {{ xu100.low }}</span>
+                <span>H {{ xu100.high }}</span>
+            </div>
+        </div>
+        {% if xu100.spark %}
+        <div class="xu100-right">
+            <svg viewBox="0 0 200 40" preserveAspectRatio="none" class="xu100-spark">
+                <defs>
+                    <linearGradient id="xu100fill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="{{ '#16a34a' if xu100.pos else '#dc2626' }}" stop-opacity="0.15"/>
+                        <stop offset="100%" stop-color="{{ '#16a34a' if xu100.pos else '#dc2626' }}" stop-opacity="0"/>
+                    </linearGradient>
+                </defs>
+                <polyline points="{{ xu100.spark }}" fill="none" stroke="{{ '#16a34a' if xu100.pos else '#dc2626' }}" stroke-width="1.5"/>
+                <polygon points="{{ xu100.spark }} 200,40 0,40" fill="url(#xu100fill)"/>
+            </svg>
+        </div>
+        {% endif %}
     </div>
+    {% endif %}
 
     {% if movers and movers.gainers %}
     <div class="sep" style="margin-top:24px"></div>
@@ -186,21 +199,6 @@
 
 <script>
 (function() {
-    document.querySelectorAll(".stat .val").forEach(function(el) {
-        var m = el.textContent.match(/^(\d+)(.*)$/);
-        if (!m) return;
-        var target = parseInt(m[1], 10), suffix = m[2];
-        var t0 = null;
-        function step(ts) {
-            if (!t0) t0 = ts;
-            var p = Math.min((ts - t0) / 800, 1);
-            p = 1 - Math.pow(1 - p, 3);
-            el.textContent = Math.round(target * p) + suffix;
-            if (p < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-    });
-
     var now = new Date();
     var istanbul = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Istanbul"}));
     var h = istanbul.getHours(), m = istanbul.getMinutes(), d = istanbul.getDay();
