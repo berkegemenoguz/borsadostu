@@ -197,6 +197,18 @@
         .chart-container { width: 100%; min-height: 500px; margin-top: 16px; margin-left: 0; padding-left: 0; overflow-x: auto; }
         .chart-container .js-plotly-plot { margin-left: 0 !important; }
 
+        .card-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 0;
+        }
+        .card-toggle.open { margin-bottom: 12px; }
+        .card-toggle .arrow { color: #999; font-size: 13px; font-weight: 400; }
+        .card-toggle:hover .arrow { color: #000; }
+
         .chart-summary {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

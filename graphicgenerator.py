@@ -219,14 +219,16 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
     df["Idx"] = range(len(df))
     tick_step = max(1, len(df) // 10)
     tick_positions = list(range(0, len(df), tick_step))
-    tick_labels = [df["Datetime"].iloc[i].strftime("%m-%d %H:%M") for i in tick_positions]
+    tick_fmt = "%Y-%m-%d" if interval == "1d" else "%m-%d %H:%M"
+    tick_labels = [df["Datetime"].iloc[i].strftime(tick_fmt) for i in tick_positions]
 
     acilis = df.iloc[0]["Open"]
     kapanis = df.iloc[-1]["Close"]
     en_yuksek = df["High"].max()
     en_dusuk = df["Low"].min()
-    en_yuksek_saat = df.loc[df["High"].idxmax(), "Datetime"].strftime("%H:%M")
-    en_dusuk_saat = df.loc[df["Low"].idxmin(), "Datetime"].strftime("%H:%M")
+    stamp_fmt = "%d.%m" if interval == "1d" else "%H:%M"
+    en_yuksek_saat = df.loc[df["High"].idxmax(), "Datetime"].strftime(stamp_fmt)
+    en_dusuk_saat = df.loc[df["Low"].idxmin(), "Datetime"].strftime(stamp_fmt)
     fark_tl = kapanis - acilis
     degisim = (kapanis - acilis) / acilis * 100
     toplam_hacim = df["Volume"].sum()

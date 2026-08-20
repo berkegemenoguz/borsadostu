@@ -103,6 +103,7 @@
                     <option value="5m" {{ 'selected' if interval == '5m' }}>5m</option>
                     <option value="15m" {{ 'selected' if interval == '15m' }}>15m</option>
                     <option value="1h" {{ 'selected' if interval == '1h' }}>1h</option>
+                    <option value="1d" {{ 'selected' if interval == '1d' }}>1d</option>
                 </select>
             </div>
             <div class="form-group">
@@ -190,8 +191,11 @@
 
 {% if history %}
 <div class="card">
-    <h2>{{ t.hourly_data }} <span style="color:#999; font-size:14px; font-weight:400;">({{ t.last_20 }})</span></h2>
-    <div style="overflow-x:auto;">
+    <h2 class="card-toggle" onclick="var b=document.getElementById('hd-body');var a=document.getElementById('hd-arrow');var o=b.style.display==='none';b.style.display=o?'block':'none';a.textContent=o?'▼':'▶';this.classList.toggle('open',o);">
+        <span class="arrow" id="hd-arrow">▶</span>
+        {{ t.hourly_data }} <span style="color:#999; font-size:14px; font-weight:400;">({{ t.last_20 }})</span>
+    </h2>
+    <div id="hd-body" style="display:none; overflow-x:auto;">
         <table>
             <thead>
                 <tr>
