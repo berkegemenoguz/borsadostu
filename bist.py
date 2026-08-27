@@ -16,6 +16,8 @@ TOP_MOVERS_SYMBOLS = [
 _ticker_cache = {"data": [], "time": 0}
 _movers_cache = {"data": [], "time": 0}
 CACHE_TTL = 300
+_detay_cache = {}
+_mcap_cache = {}
 
 
 def _fetch_one(sym):
@@ -137,6 +139,11 @@ def bist_sirketler():
 
 
 def bist_detay_veri(sembol):
+    now = time.time()
+    cached = _detay_cache.get(sembol)
+    if cached and (now - cached["time"]) < CACHE_TTL:
+        return cached["data"]
+
     result = {"info": None, "fast_info": None, "history": pd.DataFrame(), "hata": None}
     try:
         ticker = bp.Ticker(sembol)
@@ -145,9 +152,7 @@ def bist_detay_veri(sembol):
         return result
 
     try:
-        info = ticker.info
-        info.get("last")
-        result["info"] = info
+        result["info"] = ticker.info
     except Exception:
         pass
 
@@ -156,12 +161,58 @@ def bist_detay_veri(sembol):
     except Exception:
         pass
 
+    # Every lazy field below triggers its own upstream call (netDebt alone is
+    # ~5s), and the template touches them all while rendering. Warm them up
+    # front and in parallel so the page pays the slowest one, not their sum.
+    def _warm(fn):
+        try:
+            fn()
+        except Exception:
+            pass
+
+    info, fi = result["info"], result["fast_info"]
+    warmers = [
+        lambda: info and info.get("last"),
+        lambda: info and info.get("netDebt"),
+        lambda: info and info.get("dividendYield"),
+        lambda: fi and fi.pe_ratio,
+        lambda: result.__setitem__("history", ticker.history(period="5g", interval="1h")),
+    ]
+    with ThreadPoolExecutor(max_workers=len(warmers)) as pool:
+        list(pool.map(_warm, warmers))
+
+    _detay_cache[sembol] = {"data": result, "time": now}
+    return result
+
+
+def _format_mcap(mc):
+    if not mc or mc <= 0:
+        return None
+    if mc >= 1e12:
+        return f"{mc / 1e12:.1f}T TL"
+    if mc >= 1e9:
+        return f"{mc / 1e9:.1f}B TL"
+    return f"{mc / 1e6:.0f}M TL"
+
+
+def bist_market_cap(sembol):
+    """Market cap costs ~12s upstream, so it is fetched on its own, off the
+    page-render path, and cached."""
+    now = time.time()
+    cached = _mcap_cache.get(sembol)
+    if cached and (now - cached["time"]) < CACHE_TTL:
+        return cached["data"]
+
+    value = None
     try:
-        result["history"] = ticker.history(period="5g", interval="1h")
+        detay = _detay_cache.get(sembol)
+        fi = detay["data"]["fast_info"] if detay else bp.Ticker(sembol).fast_info
+        value = _format_mcap(fi.market_cap if fi else None)
     except Exception:
         pass
 
-    return result
+    _mcap_cache[sembol] = {"data": value, "time": now}
+    return value
 
 
 def bist_ozet_getir():

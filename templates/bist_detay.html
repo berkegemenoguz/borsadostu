@@ -38,16 +38,10 @@
         <div class="label">{{ t.low }}</div>
         <div class="value mono red">{{ "%.2f"|format(info.get("low", 0)) }}</div>
     </div>
-    {% if fi and fi.market_cap and fi.market_cap > 0 %}
     <div class="info-item">
         <div class="label">{{ t.market_cap }}</div>
-        <div class="value mono">
-            {% if fi.market_cap >= 1e12 %}{{ "%.1fT"|format(fi.market_cap / 1e12) }}
-            {% elif fi.market_cap >= 1e9 %}{{ "%.1fB"|format(fi.market_cap / 1e9) }}
-            {% else %}{{ "%.0fM"|format(fi.market_cap / 1e6) }}{% endif %} TL
-        </div>
+        <div class="value mono" id="mcap">—</div>
     </div>
-    {% endif %}
     <div class="info-item">
         <div class="label">{{ t.pe_ratio }}</div>
         <div class="value mono">{{ "%.1f"|format(fi.pe_ratio) if fi and fi.pe_ratio else "—" }}</div>
@@ -234,6 +228,15 @@
 {% endif %}
 
 <script>
+document.addEventListener("DOMContentLoaded", function(){
+    fetch("/api/market_cap/{{ sembol }}")
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            if (d && d.value) document.getElementById("mcap").textContent = d.value;
+        })
+        .catch(function(){});
+});
+
 function setRange(months, interval){
     var end = new Date();
     var start = new Date();

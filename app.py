@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, make_response, g
-from bist import bist_sirketler, bist_detay_veri, bist_ticker_veri, bist_top_movers, bist_xu100
+from bist import bist_sirketler, bist_detay_veri, bist_ticker_veri, bist_top_movers, bist_xu100, bist_market_cap
 from viop import viop_ozet_veri, viop_detay_veri, kontrat_tarih_araligi
 from graphicgenerator import grafik_ciz_html
 from rates import get_rates
@@ -86,6 +86,11 @@ def bist_detay(sembol):
                            interval=request.args.get("interval", "5m"),
                            active_indicators=indicators,
                            chart_type=chart_type)
+
+
+@app.route("/api/market_cap/<sembol>")
+def api_market_cap(sembol):
+    return {"value": bist_market_cap(sembol.upper())}
 
 
 @app.route("/viop")
