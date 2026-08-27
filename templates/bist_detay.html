@@ -98,6 +98,15 @@
                 <input type="date" name="end" value="{{ end }}">
             </div>
             <div class="form-group">
+                <label>{{ t.range }}</label>
+                <div class="range-btns">
+                    <button type="button" class="rb" onclick="setRange(1,'1h')">{{ t.r_1m }}</button>
+                    <button type="button" class="rb" onclick="setRange(3,'1d')">{{ t.r_3m }}</button>
+                    <button type="button" class="rb" onclick="setRange(12,'1d')">{{ t.r_1y }}</button>
+                    <button type="button" class="rb" onclick="setRange(60,'1d')">{{ t.r_5y }}</button>
+                </div>
+            </div>
+            <div class="form-group">
                 <label>{{ t.interval }}</label>
                 <select name="interval">
                     <option value="5m" {{ 'selected' if interval == '5m' }}>5m</option>
@@ -223,4 +232,22 @@
     </div>
 </div>
 {% endif %}
+
+<script>
+function setRange(months, interval){
+    var end = new Date();
+    var start = new Date();
+    start.setMonth(start.getMonth() - months);
+    var fmt = function(d){
+        return d.getFullYear() + "-" +
+               String(d.getMonth()+1).padStart(2,"0") + "-" +
+               String(d.getDate()).padStart(2,"0");
+    };
+    var form = document.querySelector("form");
+    form.querySelector("input[name=start]").value = fmt(start);
+    form.querySelector("input[name=end]").value = fmt(end);
+    form.querySelector("select[name=interval]").value = interval;
+    form.submit();
+}
+</script>
 {% endblock %}

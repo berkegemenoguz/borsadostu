@@ -62,7 +62,8 @@ def bist_detay(sembol):
         try:
             chart_html, chart_summary = grafik_ciz_html(sembol, start, end, interval, indicators or None, chart_type)
         except Exception as e:
-            veri["hata"] = f"Chart error: {e}"
+            app.logger.warning("Chart failed for %s: %s", sembol, e)
+            veri["hata"] = g.t["data_unavailable"]
 
     history_rows = []
     if not veri["history"].empty:
@@ -113,7 +114,8 @@ def viop_detay(base):
             try:
                 chart_html, chart_summary = grafik_ciz_html(sembol_param, start, end, interval, indicators or None, chart_type)
             except Exception as e:
-                veri["hata"] = f"Chart error: {e}"
+                app.logger.warning("Chart failed for %s: %s", sembol_param, e)
+                veri["hata"] = g.t["data_unavailable"]
 
     kontrat_rows = []
     for _, row in veri["kontratlar"].iterrows():

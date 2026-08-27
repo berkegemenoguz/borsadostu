@@ -1,4 +1,5 @@
 import borsapy as bp
+import time
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
@@ -213,9 +214,25 @@ SMA_EMA_COLORS = {
 }
 
 
+def _fetch_history(sembol, start, end, interval, attempts=3):
+    """Fetch OHLC data, retrying transient upstream failures (the data provider
+    drops the websocket under load, which otherwise surfaces as a raw error)."""
+    last_err = None
+    for i in range(attempts):
+        try:
+            return bp.Ticker(sembol).history(start=start, end=end, interval=interval)
+        except Exception as e:
+            last_err = e
+            # a bad ticker will never succeed, so don't burn retries on it
+            if "invalid symbol" in str(e).lower():
+                break
+            if i < attempts - 1:
+                time.sleep(0.6 * (i + 1))
+    raise last_err
+
+
 def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick"):
-    hisse = bp.Ticker(sembol)
-    df = hisse.history(start=start, end=end, interval=interval)
+    df = _fetch_history(sembol, start, end, interval)
 
     if df.empty:
         return None
@@ -631,7 +648,6 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
 
     return fig, summary
 
-
 def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick"):
     result = _build_figure(sembol, start, end, interval, indicators, chart_type)
     if result is None:
@@ -645,5 +661,3 @@ def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None, chart_ty
         div_id="grafik-container",
     )
     return chart_div + FIB_SCRIPT_EMBED, summary
-
-
