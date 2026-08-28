@@ -18,12 +18,11 @@
 
 {% block content %}
 <style>
-    .home-container { max-width: 900px; margin: 0 auto; }
+    .home-container { max-width: 1140px; margin: 0 auto; }
 
-    .ticker-bar { background: #fff; border-bottom: 1px solid #e0e0e0; overflow: hidden; height: 34px; width: 100%; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-    .ticker-track { display: flex; width: max-content; gap: 32px; white-space: nowrap; padding: 8px 0; animation: scroll-ticker 40s linear infinite; will-change: transform; }
-    .ticker-bar:hover .ticker-track { animation-play-state: paused; }
-    .ticker-item { font-size: 13px; color: #666; font-family: "SF Mono", "Fira Code", monospace; display: flex; gap: 6px; flex-shrink: 0; }
+    .ticker-bar { background: #fff; border-bottom: 1px solid #e0e0e0; overflow: hidden; height: 34px; width: 100%; box-shadow: 0 2px 6px rgba(0,0,0,0.06); pointer-events: none; }
+    .ticker-track { display: flex; width: max-content; white-space: nowrap; padding: 8px 0; animation: scroll-ticker 40s linear infinite; will-change: transform; }
+    .ticker-item { font-size: 13px; color: #666; font-family: "SF Mono", "Fira Code", monospace; display: flex; gap: 6px; flex-shrink: 0; padding-right: 32px; }
     .ticker-item .up { color: #16a34a; }
     .ticker-item .down { color: #dc2626; }
     @keyframes scroll-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
