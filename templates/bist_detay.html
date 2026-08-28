@@ -116,18 +116,18 @@
         </div>
         <div class="ind-toggle" onclick="var b=document.getElementById('ind-body');var a=document.getElementById('ind-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='▼';}else{b.style.display='none';a.textContent='▶';}">
             <span id="ind-arrow" style="color:#999;font-size:13px;">{{ '▼' if active_indicators else '▶' }}</span>
-            <span style="font-size:15px;font-weight:700;color:#000;font-family:'Cabinet Grotesk',sans-serif;">{{ t.indicators }}</span>
+            <span style="font-size:15px;font-weight:700;color:#eef2f7;font-family:'Cabinet Grotesk',sans-serif;">{{ t.indicators }}</span>
             {% if active_indicators %}
             <span style="font-size:12px;color:#999;margin-left:4px;">{{ active_indicators|join(', ') }}</span>
             {% endif %}
         </div>
-        <div id="ind-body" style="display:{{ 'block' if active_indicators else 'none' }};background:#fafafa;border:1px solid #e0e0e0;border-top:1px solid #e0e0e0;padding:14px;">
+        <div id="ind-body" style="display:{{ 'block' if active_indicators else 'none' }};background:#0e1520;border:1px solid #1a2230;border-top:1px solid #1a2230;padding:14px;">
             <div style="display:flex;flex-direction:column;gap:14px;">
                 <div>
                     <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Overlay</div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         {% for key, label in [("sma20","SMA 20"),("sma50","SMA 50"),("sma200","SMA 200"),("ema20","EMA 20"),("ema50","EMA 50"),("bb","Bollinger"),("sr","S/R"),("vwap","VWAP"),("supertrend","Supertrend")] %}
-                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#333;cursor:pointer;">
+                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#cfd6e0;cursor:pointer;">
                             <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
                         </label>
                         {% endfor %}
@@ -137,7 +137,7 @@
                     <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Panel</div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         {% for key, label in [("rsi","RSI 14"),("macd","MACD"),("atr","ATR 14"),("adx","ADX"),("obv","OBV")] %}
-                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#333;cursor:pointer;">
+                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#cfd6e0;cursor:pointer;">
                             <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
                         </label>
                         {% endfor %}

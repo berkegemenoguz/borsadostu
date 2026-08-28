@@ -293,9 +293,68 @@
             .info-grid { grid-template-columns: 1fr 1fr; }
             .chart-summary { grid-template-columns: 1fr 1fr; }
         }
+
+        /* ===== DARK THEME (site-wide) ===== */
+        body{background:#05080d;color:#cfd6e0}
+        a{color:#cfd6e0}
+        .navbar{background:#0c121b;border-bottom-color:#1a2230;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+        .nav-left a{color:#8a98ab}
+        .nav-left a:hover{color:#eef2f7}
+        .nav-left a.nav-active{color:#eef2f7;border-bottom-color:#54d6ff}
+        .navbar .brand{color:#eef2f7}
+        .navbar .brand span{color:#5a6779}
+        h1,h2{color:#eef2f7}
+        table{background:#0c121b;border-color:#1a2230;box-shadow:0 4px 16px rgba(0,0,0,.45)}
+        th{background:#0e1520;color:#5a6779;border-bottom-color:#1a2230}
+        td{border-bottom-color:#171f29}
+        tr:hover{background:#0e1520}
+        .green{color:#2ad07f}
+        .red{color:#ff4d5e}
+        .card{background:#0c121b;border-color:#1a2230;box-shadow:0 4px 16px rgba(0,0,0,.45)}
+        .ind-toggle{background:#0e1520;border-color:#1a2230}
+        .form-group label{color:#5a6779}
+        .form-group input,.form-group select{background:#0e1520;border-color:#1a2230;color:#eef2f7;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+        .form-group input:hover,.form-group select:hover{border-color:#3a4553}
+        .form-group input:focus,.form-group select:focus{border-color:#54d6ff;box-shadow:0 0 0 1px #54d6ff}
+        .form-group input::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.6)}
+        .rb{background:#0e1520;border-color:#1a2230;color:#8a98ab}
+        .rb:last-child{border-right-color:#1a2230}
+        .rb:hover{background:#54d6ff;color:#05080d;border-color:#54d6ff}
+        .ct-btn{background:#0e1520;border-color:#1a2230;color:#8a98ab}
+        .ct-btn.active{background:#54d6ff;color:#05080d;border-color:#54d6ff}
+        .ct-btn:hover:not(.active){background:#141b24;color:#eef2f7}
+        .btn{background:#0e1520;color:#eef2f7;border-color:#1a2230;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+        .btn:hover{border-color:#3a4553;box-shadow:0 4px 14px rgba(0,0,0,.55)}
+        .search-box{background:#0e1520;border-color:#1a2230;color:#eef2f7;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+        .search-box::placeholder{color:#5a6779}
+        .info-grid{background:#0c121b;border-color:#1a2230;box-shadow:0 4px 16px rgba(0,0,0,.45)}
+        .info-item{border-right-color:#171f29;border-bottom-color:#171f29}
+        .info-item:hover{background:#0e1520}
+        .info-item .label{color:#5a6779}
+        .info-item .value{color:#eef2f7}
+        .card-toggle .arrow{color:#5a6779}
+        .card-toggle:hover .arrow{color:#eef2f7}
+        .chart-summary{border-color:#1a2230}
+        .cs-item{border-right-color:#171f29;border-bottom-color:#171f29}
+        .cs-item .label{color:#5a6779}
+        .cs-item .value{color:#eef2f7}
+        .cs-item .value small{color:#5a6779}
+        .error{background:rgba(255,77,94,.1);border-color:#ff4d5e;color:#ff4d5e}
+        .footer{border-top-color:#1a2230;color:#5a6779}
+        .footer a{color:#8a98ab}
+        .footer a:hover{color:#eef2f7}
+        .lang-switch{color:#8a98ab}
+        .lang-switch span.active{color:#eef2f7}
+        .lang-toggle{background:#1a2230}
+        .lang-toggle::after{background:#54d6ff}
+        .loading-overlay{background:rgba(5,8,13,.88)}
+        .loading-text{color:#8a98ab}
+        input[type=checkbox]{accent-color:#54d6ff}
+        ::selection{background:#54d6ff;color:#05080d}
     </style>
 </head>
 <body>
+    {% block body_main %}
     <nav class="navbar">
         <div class="nav-left">
             <a href="/bist" class="{{ 'nav-active' if request.path.startswith('/bist') }}">BIST</a>
@@ -332,5 +391,6 @@
         a.addEventListener("click", function(){ document.getElementById("loading").classList.add("active"); });
     });
     </script>
+    {% endblock %}
 </body>
 </html>

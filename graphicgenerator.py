@@ -71,16 +71,16 @@ FIB_SCRIPT_EMBED = """<script>
   var toggle = document.createElement("a");
   toggle.className = "modebar-btn";
   toggle.setAttribute("data-title","Tools");
-  toggle.style.cssText = "cursor:pointer;color:#666;font-size:13px;padding:4px 8px;user-select:none;";
+  toggle.style.cssText = "cursor:pointer;color:#8a98ab;font-size:13px;padding:4px 8px;user-select:none;";
   toggle.textContent = "Tools ▾";
 
   var menu = document.createElement("div");
-  menu.style.cssText = "display:none;position:absolute;right:0;top:100%;background:#fff;border:1px solid #ddd;min-width:140px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.12);";
+  menu.style.cssText = "display:none;position:absolute;right:0;top:100%;background:#0c121b;border:1px solid #1a2230;min-width:140px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.5);";
 
   var fibBtn = document.createElement("a");
-  fibBtn.style.cssText = "display:block;padding:8px 12px;color:#333;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
+  fibBtn.style.cssText = "display:block;padding:8px 12px;color:#cfd6e0;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
   fibBtn.textContent = "Fibonacci";
-  fibBtn.onmouseenter = function(){ fibBtn.style.background="#f5f5f5"; };
+  fibBtn.onmouseenter = function(){ fibBtn.style.background="#141b24"; };
   fibBtn.onmouseleave = function(){ fibBtn.style.background="transparent"; };
   fibBtn.onclick = function(){
     menu.style.display = "none";
@@ -96,9 +96,9 @@ FIB_SCRIPT_EMBED = """<script>
   menu.appendChild(fibBtn);
 
   var trendBtn = document.createElement("a");
-  trendBtn.style.cssText = "display:block;padding:8px 12px;color:#333;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
+  trendBtn.style.cssText = "display:block;padding:8px 12px;color:#cfd6e0;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;";
   trendBtn.textContent = "Trend Line";
-  trendBtn.onmouseenter = function(){ trendBtn.style.background="#f5f5f5"; };
+  trendBtn.onmouseenter = function(){ trendBtn.style.background="#141b24"; };
   trendBtn.onmouseleave = function(){ trendBtn.style.background="transparent"; };
   trendBtn.onclick = function(){
     menu.style.display = "none";
@@ -113,7 +113,7 @@ FIB_SCRIPT_EMBED = """<script>
   var clearBtn = document.createElement("a");
   clearBtn.style.cssText = "display:block;padding:8px 12px;color:#dc2626;cursor:pointer;font-size:13px;white-space:nowrap;text-decoration:none;border-top:1px solid #eee;";
   clearBtn.textContent = "Clear All";
-  clearBtn.onmouseenter = function(){ clearBtn.style.background="#f5f5f5"; };
+  clearBtn.onmouseenter = function(){ clearBtn.style.background="#141b24"; };
   clearBtn.onmouseleave = function(){ clearBtn.style.background="transparent"; };
   clearBtn.onclick = function(){
     menu.style.display = "none";
@@ -159,7 +159,7 @@ FIB_SCRIPT_EMBED = """<script>
       }
       if(clicks.length === 2){
         gd._trendMode = false;
-        toggle.style.color = "#666";
+        toggle.style.color = "#8a98ab";
         toggle.textContent = "Tools ▾";
         var shapes = gd.layout.shapes ? gd.layout.shapes.slice() : [];
         shapes.push({type:"line", x0:clicks[0].x, x1:clicks[1].x, y0:clicks[0].y, y1:clicks[1].y,
@@ -177,7 +177,7 @@ FIB_SCRIPT_EMBED = """<script>
       }
       if(clicks.length === 2){
         gd._fibMode = false;
-        toggle.style.color = "#666";
+        toggle.style.color = "#8a98ab";
         toggle.textContent = "Tools ▾";
         // anchor to the true extremes of the two picked bars, whatever order they were picked in
         var high = Math.max(clicks[0].hi, clicks[1].hi);
@@ -192,7 +192,7 @@ FIB_SCRIPT_EMBED = """<script>
           annots.push({x:0.01, xref:"paper", y:lvl, yref:"y",
             text:(fibLevels[i]*100).toFixed(1)+"% "+lvl.toFixed(2),
             showarrow:false, font:{color:fibColors[i], size:10, family:"monospace"},
-            bgcolor:"rgba(255,255,255,0.9)", borderpad:2, xanchor:"left", _fib:true});
+            bgcolor:"rgba(12,18,27,0.92)", borderpad:2, xanchor:"left", _fib:true});
         }
         Plotly.relayout(gd, {shapes:shapes, annotations:annots});
         clicks = [];
@@ -587,9 +587,9 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
 
     fig.update_layout(
         title=f"{sembol}  |  {start} → {end}  |  {interval} candlestick",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="#ffffff",
-        font_color="#666666",
+        plot_bgcolor="#0c121b",
+        paper_bgcolor="#05080d",
+        font_color="#8a98ab",
         xaxis_rangeslider_visible=False,
         yaxis_title="Price (TL)",
         yaxis2_title="Volume",
@@ -599,7 +599,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         **({"yaxis" + str(atr_row) + "_title": "ATR"} if has_atr else {}),
         **({"yaxis" + str(adx_row) + "_title": "ADX"} if has_adx else {}),
         **({"yaxis" + str(obv_row) + "_title": "OBV"} if has_obv else {}),
-        legend=dict(bgcolor="#ffffff", bordercolor="#e0e0e0"),
+        legend=dict(bgcolor="#0c121b", bordercolor="#1a2230"),
         height=700 + extra_panels * 120,
         margin=dict(b=100),
         annotations=sr_annotations,
@@ -607,21 +607,21 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         dragmode="pan",
         hovermode="x unified",
         hoverlabel=dict(
-            bgcolor="#fff",
-            bordercolor="#e0e0e0",
-            font=dict(size=12, family="monospace", color="#333"),
+            bgcolor="#0c121b",
+            bordercolor="#1a2230",
+            font=dict(size=12, family="monospace", color="#eef2f7"),
         ),
     )
 
     fig.update_xaxes(
         spikemode="across", spikethickness=1,
-        spikecolor="#ccc", spikedash="dot",
+        spikecolor="#3a4553", spikedash="dot",
         tickvals=tick_positions,
         ticktext=tick_labels,
     )
     fig.update_yaxes(
         spikemode="across", spikethickness=1,
-        spikecolor="#ccc", spikedash="dot",
+        spikecolor="#3a4553", spikedash="dot",
         fixedrange=False,
     )
 
@@ -631,7 +631,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         suffix = "" if i == 1 else str(i)
         axes += ["xaxis" + suffix, "yaxis" + suffix]
     for ax in axes:
-        fig.update_layout(**{ax: dict(gridcolor="#f0f0f0", zeroline=False)})
+        fig.update_layout(**{ax: dict(gridcolor="#141b24", zeroline=False)})
 
     summary = {
         "open": f"{acilis:.2f}",

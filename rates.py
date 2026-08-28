@@ -13,7 +13,7 @@ def _fetch_tcmb():
     out = {}
     for cur in root.findall(".//Currency"):
         code = cur.get("Kod")
-        if code in ("USD", "EUR"):
+        if code in ("USD", "EUR", "GBP", "CHF"):
             buy = cur.find("ForexBuying")
             sell = cur.find("ForexSelling")
             bval = float(buy.text) if buy is not None and buy.text else 0
@@ -67,6 +67,12 @@ def get_rates():
         rates.append({"symbol": "USD/TRY", "price": f"{usd_try:.2f}", "unit": "₺"})
     if eur_try:
         rates.append({"symbol": "EUR/TRY", "price": f"{eur_try:.2f}", "unit": "₺"})
+    gbp_try = tcmb.get("GBP", 0)
+    if gbp_try:
+        rates.append({"symbol": "GBP/TRY", "price": f"{gbp_try:.2f}", "unit": "₺"})
+    chf_try = tcmb.get("CHF", 0)
+    if chf_try:
+        rates.append({"symbol": "CHF/TRY", "price": f"{chf_try:.2f}", "unit": "₺"})
 
     xau_usd = metals.get("XAU", 0)
     xag_usd = metals.get("XAG", 0)

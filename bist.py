@@ -111,8 +111,8 @@ def bist_top_movers():
         results = list(pool.map(_fetch_weekly_change, TOP_MOVERS_SYMBOLS))
     items = [r for r in results if r]
     items.sort(key=lambda x: x["change"], reverse=True)
-    most_active = sorted(items, key=lambda x: x["volume"], reverse=True)[:5]
-    data = {"gainers": items[:5], "losers": items[-5:][::-1], "active": most_active}
+    most_active = sorted(items, key=lambda x: x["volume"], reverse=True)[:8]
+    data = {"gainers": items[:8], "losers": items[-8:][::-1], "active": most_active}
     _movers_cache["data"] = data
     _movers_cache["time"] = now
     return data
