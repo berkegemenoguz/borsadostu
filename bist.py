@@ -6,7 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from graphicgenerator import grafik_ciz_html
 
 
-TICKER_SYMBOLS = ["THYAO", "TUPRS", "ASELS", "GARAN", "EREGL", "KCHOL", "AKBNK", "SASA", "BIMAS", "SAHOL"]
+TICKER_SYMBOLS = ["THYAO", "TUPRS", "ASELS", "GARAN", "EREGL", "KCHOL", "AKBNK", "SASA", "BIMAS", "SAHOL",
+                  "SISE", "FROTO", "TCELL", "PGSUS", "TOASO"]
 TOP_MOVERS_SYMBOLS = [
     "THYAO", "TUPRS", "ASELS", "GARAN", "EREGL", "KCHOL", "AKBNK", "SASA",
     "BIMAS", "SAHOL", "SISE", "TOASO", "FROTO", "PETKM", "TCELL", "ENKAI",
@@ -170,12 +171,12 @@ def bist_detay_veri(sembol):
         except Exception:
             pass
 
-    info, fi = result["info"], result["fast_info"]
+    # Only the quote group (last/change/volume/open/high/low - one upstream call)
+    # and the history are on the page's critical path. The fundamentals each cost
+    # a separate 2-6s call and are loaded afterwards via bist_fundamentals().
+    info = result["info"]
     warmers = [
         lambda: info and info.get("last"),
-        lambda: info and info.get("netDebt"),
-        lambda: info and info.get("dividendYield"),
-        lambda: fi and fi.pe_ratio,
         lambda: result.__setitem__("history", ticker.history(period="5g", interval="1h")),
     ]
     with ThreadPoolExecutor(max_workers=len(warmers)) as pool:
@@ -185,34 +186,72 @@ def bist_detay_veri(sembol):
     return result
 
 
-def _format_mcap(mc):
-    if not mc or mc <= 0:
+def _fmt_big(v, suffix="TL"):
+    if v is None:
         return None
-    if mc >= 1e12:
-        return f"{mc / 1e12:.1f}T TL"
-    if mc >= 1e9:
-        return f"{mc / 1e9:.1f}B TL"
-    return f"{mc / 1e6:.0f}M TL"
+    a = abs(v)
+    if a >= 1e12:
+        return f"{v / 1e12:.1f}T {suffix}"
+    if a >= 1e9:
+        return f"{v / 1e9:.1f}B {suffix}"
+    if a >= 1e6:
+        return f"{v / 1e6:.0f}M {suffix}"
+    return f"{v:.0f} {suffix}"
 
 
-def bist_market_cap(sembol):
-    """Market cap costs ~12s upstream, so it is fetched on its own, off the
-    page-render path, and cached."""
+def bist_fundamentals(sembol):
+    """The fundamentals come from three separate upstream calls costing ~2-6s
+    each, so they are fetched off the page-render path, in parallel, and cached.
+    """
     now = time.time()
     cached = _mcap_cache.get(sembol)
     if cached and (now - cached["time"]) < CACHE_TTL:
         return cached["data"]
 
-    value = None
-    try:
-        detay = _detay_cache.get(sembol)
-        fi = detay["data"]["fast_info"] if detay else bp.Ticker(sembol).fast_info
-        value = _format_mcap(fi.market_cap if fi else None)
-    except Exception:
-        pass
+    detay = _detay_cache.get(sembol)
+    if detay:
+        info, fi = detay["data"]["info"], detay["data"]["fast_info"]
+    else:
+        tk = bp.Ticker(sembol)
+        info, fi = tk.info, tk.fast_info
 
-    _mcap_cache[sembol] = {"data": value, "time": now}
-    return value
+    def _warm(fn):
+        try:
+            fn()
+        except Exception:
+            pass
+
+    # each lambda triggers one of the three distinct upstream fetches
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        list(pool.map(_warm, [
+            lambda: info and info.get("netDebt"),
+            lambda: info and info.get("dividendYield"),
+            lambda: fi and fi.pe_ratio,
+        ]))
+
+    def g(obj, key, attr=False):
+        try:
+            return getattr(obj, key) if attr else obj.get(key)
+        except Exception:
+            return None
+
+    ev = g(info, "enterpriseToEbitda")
+    dy = g(info, "dividendYield")
+    pe, pb = g(fi, "pe_ratio", True), g(fi, "pb_ratio", True)
+    yh, yl = g(fi, "year_high", True), g(fi, "year_low", True)
+
+    data = {
+        "market_cap": _fmt_big(g(fi, "market_cap", True)),
+        "net_debt": _fmt_big(g(info, "netDebt")),
+        "pe_ratio": f"{pe:.1f}" if pe else None,
+        "pb_ratio": f"{pb:.1f}" if pb else None,
+        "year_high": f"{yh:.2f}" if yh else None,
+        "year_low": f"{yl:.2f}" if yl else None,
+        "dividend_yield": f"{dy:.2f}%" if dy else None,
+        "ev_ebitda": f"{ev:.1f}" if ev else None,
+    }
+    _mcap_cache[sembol] = {"data": data, "time": now}
+    return data
 
 
 def bist_ozet_getir():

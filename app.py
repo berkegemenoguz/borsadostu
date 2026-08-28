@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, make_response, g
-from bist import bist_sirketler, bist_detay_veri, bist_ticker_veri, bist_top_movers, bist_xu100, bist_market_cap
+from bist import bist_sirketler, bist_detay_veri, bist_ticker_veri, bist_top_movers, bist_xu100, bist_fundamentals
 from viop import viop_ozet_veri, viop_detay_veri, kontrat_tarih_araligi
 from graphicgenerator import grafik_ciz_html
 from rates import get_rates
 from translations import TRANSLATIONS
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
@@ -32,10 +33,17 @@ def set_lang(code):
 
 @app.route("/")
 def home():
-    ticker_data = bist_ticker_veri()
-    movers = bist_top_movers()
-    rates = get_rates()
-    xu100 = bist_xu100()
+    # these four are independent upstream fetches (~13s combined when cold);
+    # run them in parallel so a cold home page pays only the slowest one
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        f_ticker = pool.submit(bist_ticker_veri)
+        f_movers = pool.submit(bist_top_movers)
+        f_rates = pool.submit(get_rates)
+        f_xu100 = pool.submit(bist_xu100)
+        ticker_data = f_ticker.result()
+        movers = f_movers.result()
+        rates = f_rates.result()
+        xu100 = f_xu100.result()
     return render_template("home.html", ticker_data=ticker_data, movers=movers, rates=rates, xu100=xu100)
 
 
@@ -88,9 +96,13 @@ def bist_detay(sembol):
                            chart_type=chart_type)
 
 
-@app.route("/api/market_cap/<sembol>")
-def api_market_cap(sembol):
-    return {"value": bist_market_cap(sembol.upper())}
+@app.route("/api/fundamentals/<sembol>")
+def api_fundamentals(sembol):
+    try:
+        return bist_fundamentals(sembol.upper())
+    except Exception as e:
+        app.logger.warning("Fundamentals failed for %s: %s", sembol, e)
+        return {}
 
 
 @app.route("/viop")

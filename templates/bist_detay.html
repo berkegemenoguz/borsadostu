@@ -40,41 +40,35 @@
     </div>
     <div class="info-item">
         <div class="label">{{ t.market_cap }}</div>
-        <div class="value mono" id="mcap">—</div>
+        <div class="value mono" data-f="market_cap">—</div>
     </div>
     <div class="info-item">
         <div class="label">{{ t.pe_ratio }}</div>
-        <div class="value mono">{{ "%.1f"|format(fi.pe_ratio) if fi and fi.pe_ratio else "—" }}</div>
+        <div class="value mono" data-f="pe_ratio">—</div>
     </div>
     <div class="info-item">
         <div class="label">{{ t.pb_ratio }}</div>
-        <div class="value mono">{{ "%.1f"|format(fi.pb_ratio) if fi and fi.pb_ratio else "—" }}</div>
+        <div class="value mono" data-f="pb_ratio">—</div>
     </div>
     <div class="info-item">
         <div class="label">{{ t.week52_high }}</div>
-        <div class="value mono green">{{ "%.2f"|format(fi.year_high) if fi else "—" }}</div>
+        <div class="value mono green" data-f="year_high">—</div>
     </div>
     <div class="info-item">
         <div class="label">{{ t.week52_low }}</div>
-        <div class="value mono red">{{ "%.2f"|format(fi.year_low) if fi else "—" }}</div>
+        <div class="value mono red" data-f="year_low">—</div>
     </div>
     <div class="info-item">
         <div class="label">{{ t.dividend_yield }}</div>
-        <div class="value mono">{{ "%.2f%%"|format(info.get("dividendYield", 0) or 0) }}</div>
+        <div class="value mono" data-f="dividend_yield">—</div>
     </div>
     <div class="info-item">
         <div class="label">{{ t.net_debt }}</div>
-        <div class="value mono">
-            {% set nd = info.get("netDebt", 0) or 0 %}
-            {% if nd >= 1e12 or nd <= -1e12 %}{{ "%.1fT"|format(nd / 1e12) }}
-            {% elif nd >= 1e9 or nd <= -1e9 %}{{ "%.1fB"|format(nd / 1e9) }}
-            {% elif nd >= 1e6 or nd <= -1e6 %}{{ "%.0fM"|format(nd / 1e6) }}
-            {% else %}{{ "%.0f"|format(nd) }}{% endif %} TL
-        </div>
+        <div class="value mono" data-f="net_debt">—</div>
     </div>
     <div class="info-item">
         <div class="label">{{ t.ev_ebitda }}</div>
-        <div class="value mono">{{ "%.1f"|format(info.get("enterpriseToEbitda", 0) or 0) if info.get("enterpriseToEbitda") else "—" }}</div>
+        <div class="value mono" data-f="ev_ebitda">—</div>
     </div>
 </div>
 {% endif %}
@@ -229,10 +223,13 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function(){
-    fetch("/api/market_cap/{{ sembol }}")
+    fetch("/api/fundamentals/{{ sembol }}")
         .then(function(r){ return r.json(); })
         .then(function(d){
-            if (d && d.value) document.getElementById("mcap").textContent = d.value;
+            document.querySelectorAll("[data-f]").forEach(function(el){
+                var v = d[el.getAttribute("data-f")];
+                if (v) el.textContent = v;
+            });
         })
         .catch(function(){});
 });
@@ -250,7 +247,6 @@ function setRange(months, interval){
     form.querySelector("input[name=start]").value = fmt(start);
     form.querySelector("input[name=end]").value = fmt(end);
     form.querySelector("select[name=interval]").value = interval;
-    form.submit();
 }
 </script>
 {% endblock %}
