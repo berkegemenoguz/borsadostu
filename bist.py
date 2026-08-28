@@ -22,24 +22,36 @@ _mcap_cache = {}
 
 
 def _fetch_one(sym):
-    try:
-        t = bp.Ticker(sym)
-        info = t.info
-        info.get("last")
-        return {"symbol": sym, "price": f"{info.get('last', 0):.2f}",
-                "change": info.get("change_percent", 0),
-                "pos": info.get("change_percent", 0) >= 0}
-    except Exception:
-        return None
+    for attempt in range(2):
+        try:
+            info = bp.Ticker(sym).info
+            info.get("last")
+            return {"symbol": sym, "price": f"{info.get('last', 0):.2f}",
+                    "change": info.get("change_percent", 0),
+                    "pos": info.get("change_percent", 0) >= 0}
+        except Exception:
+            if attempt == 0:
+                time.sleep(0.5)
+    return None
 
 
 def bist_ticker_veri():
     now = time.time()
     if _ticker_cache["data"] and (now - _ticker_cache["time"]) < CACHE_TTL:
         return _ticker_cache["data"]
-    with ThreadPoolExecutor(max_workers=10) as pool:
+    with ThreadPoolExecutor(max_workers=6) as pool:
         results = list(pool.map(_fetch_one, TICKER_SYMBOLS))
     items = [r for r in results if r]
+
+    # if most symbols failed (upstream throttling), keep the previous good data
+    # rather than locking a thin ticker in for the full cache window
+    if len(items) < len(TICKER_SYMBOLS) * 0.6:
+        if len(_ticker_cache["data"]) > len(items):
+            return _ticker_cache["data"]
+        _ticker_cache["data"] = items
+        _ticker_cache["time"] = now - CACHE_TTL + 30  # retry in ~30s
+        return items
+
     _ticker_cache["data"] = items
     _ticker_cache["time"] = now
     return items
