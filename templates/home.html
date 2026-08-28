@@ -2,6 +2,76 @@
 {% block title %}{{ t.site_name }} — {{ t.subtitle }}{% endblock %}
 
 {% block pre_content %}
+<div id="intro-splash">
+    <div class="intro-bg"></div>
+    <div class="intro-overlay"></div>
+    <div class="intro-content">
+        <div class="intro-brand">Borsa <span>Dostu</span></div>
+        <p class="intro-body">{{ t.intro_body }}</p>
+        <div class="intro-hint">{{ t.intro_hint }}</div>
+    </div>
+</div>
+<style>
+    #intro-splash {
+        position: fixed; inset: 0; z-index: 10000; display: none;
+        align-items: center; justify-content: center; overflow: hidden;
+        background: #0a0e14; cursor: pointer;
+    }
+    #intro-splash.show { display: flex; }
+    #intro-splash.leaving { animation: intro-out 0.7s cubic-bezier(0.7,0,0.3,1) forwards; }
+    #intro-splash .intro-bg {
+        position: absolute; inset: -30%;
+        background: url("{{ url_for('static', filename='intro-bg.svg') }}") center/cover no-repeat, #0a0e14;
+        transform: rotate(-6deg) scale(1.25);
+        animation: intro-zoom 12s ease-out forwards;
+    }
+    #intro-splash .intro-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(105deg, rgba(8,11,18,0.92) 0%, rgba(8,11,18,0.72) 45%, rgba(8,11,18,0.55) 100%);
+    }
+    .intro-content {
+        position: relative; max-width: 640px; padding: 0 40px;
+        text-align: left; color: #fff;
+        animation: intro-in 0.9s cubic-bezier(0.2,0.7,0.2,1) both;
+    }
+    .intro-brand {
+        font-family: 'Cabinet Grotesk', sans-serif; font-weight: 800;
+        font-size: clamp(48px, 8vw, 84px); letter-spacing: -2px; line-height: 1;
+        color: #fff; margin-bottom: 24px;
+    }
+    .intro-brand span { color: #8a94a6; }
+    .intro-body {
+        font-family: 'Satoshi', sans-serif; font-size: clamp(16px, 2.2vw, 21px);
+        line-height: 1.65; color: #c7cfdb; max-width: 560px;
+    }
+    .intro-hint {
+        margin-top: 44px; font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+        color: #6b7688; font-weight: 600; animation: intro-pulse 2s ease-in-out infinite;
+    }
+    @keyframes intro-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+    @keyframes intro-out { to { opacity: 0; transform: translateY(-40px); } }
+    @keyframes intro-zoom { from { transform: rotate(-6deg) scale(1.35); } to { transform: rotate(-6deg) scale(1.25); } }
+    @keyframes intro-pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+        #intro-splash .intro-bg, .intro-content, .intro-hint { animation: none; }
+        #intro-splash.leaving { animation: none; display: none; }
+    }
+</style>
+<script>
+(function(){
+    var splash = document.getElementById("intro-splash");
+    if (!splash) return;
+    splash.classList.add("show");   // shown on every visit
+    document.body.style.overflow = "hidden";
+    function dismiss(){
+        splash.classList.add("leaving");
+        document.body.style.overflow = "";
+        setTimeout(function(){ splash.style.display = "none"; }, 700);
+        splash.removeEventListener("click", dismiss);
+    }
+    splash.addEventListener("click", dismiss);
+})();
+</script>
 {% if ticker_data %}
 <div class="ticker-bar">
     <div class="ticker-track">
