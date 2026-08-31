@@ -5,8 +5,25 @@ from graphicgenerator import grafik_ciz_html
 from rates import get_rates
 from translations import TRANSLATIONS
 from concurrent.futures import ThreadPoolExecutor
+import threading
 
 app = Flask(__name__)
+
+_warm_lock = threading.Lock()
+
+
+def _warm_caches():
+    # Fetch FRESH data into the in-memory caches. Each fetcher refetches only
+    # when its cache has expired, so this is cheap when already warm. Never
+    # serves stale data — it just refills the cache before a visitor arrives.
+    if not _warm_lock.acquire(blocking=False):
+        return  # a warm-up is already running; don't stack them
+    try:
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            for fn in (bist_ticker_veri, bist_top_movers, get_rates, bist_xu100, bist_sirketler):
+                pool.submit(fn)
+    finally:
+        _warm_lock.release()
 
 
 @app.before_request
@@ -33,8 +50,13 @@ def set_lang(code):
 
 @app.route("/health")
 def health():
-    # Lightweight endpoint for the uptime pinger: instant 200, no upstream
-    # fetches. Reliably resets Render's idle timer so the service never sleeps.
+    # Single endpoint the uptime pinger hits to do BOTH jobs:
+    #  1) keep-alive — responds instantly with 200 so the idle timer resets
+    #     and the service never sleeps (Render sees a fast, healthy ping);
+    #  2) cache warm-up — kicks off a background refresh of the home-page data
+    #     so real visitors land on ready, fresh caches instead of paying the
+    #     cold fetch. The response does not wait for the warm-up.
+    threading.Thread(target=_warm_caches, daemon=True).start()
     return "ok", 200
 
 
