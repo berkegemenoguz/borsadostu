@@ -31,6 +31,13 @@ def set_lang(code):
     return resp
 
 
+@app.route("/health")
+def health():
+    # Lightweight endpoint for the uptime pinger: instant 200, no upstream
+    # fetches. Reliably resets Render's idle timer so the service never sleeps.
+    return "ok", 200
+
+
 @app.route("/")
 def home():
     # these four are independent upstream fetches (~13s combined when cold);
