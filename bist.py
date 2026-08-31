@@ -19,6 +19,17 @@ _movers_cache = {"data": [], "time": 0}
 CACHE_TTL = 300
 _detay_cache = {}
 _mcap_cache = {}
+# Each detail entry holds a history DataFrame, so an unbounded dict grows until
+# the instance is OOM-killed. Keep only a bounded, non-expired working set.
+MAX_CACHE_ENTRIES = 40
+
+
+def _cache_put(cache, key, data, now):
+    for k in [k for k, v in cache.items() if now - v["time"] >= CACHE_TTL]:
+        cache.pop(k, None)
+    while len(cache) >= MAX_CACHE_ENTRIES:
+        cache.pop(min(cache, key=lambda k: cache[k]["time"]), None)
+    cache[key] = {"data": data, "time": now}
 
 
 def _fetch_one(sym):
@@ -207,7 +218,7 @@ def bist_detay_veri(sembol):
     with ThreadPoolExecutor(max_workers=len(warmers)) as pool:
         list(pool.map(_warm, warmers))
 
-    _detay_cache[sembol] = {"data": result, "time": now}
+    _cache_put(_detay_cache, sembol, result, now)
     return result
 
 
@@ -275,7 +286,7 @@ def bist_fundamentals(sembol):
         "dividend_yield": f"{dy:.2f}%" if dy else None,
         "ev_ebitda": f"{ev:.1f}" if ev else None,
     }
-    _mcap_cache[sembol] = {"data": data, "time": now}
+    _cache_put(_mcap_cache, sembol, data, now)
     return data
 
 

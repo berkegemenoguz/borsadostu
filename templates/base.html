@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Borsa Dostu{% endblock %}</title>
-    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    {# Plotly is 4.5 MB and blocks rendering, so only chart pages pull it in
+       (bist_detay / viop_detay override this block). Pages without a chart —
+       home, BIST and VIOP lists — must never pay for it. #}
+    {% block head_js %}{% endblock %}
     <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
