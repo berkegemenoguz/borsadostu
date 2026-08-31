@@ -51,7 +51,8 @@ def home():
 def bist():
     df = bist_sirketler()
     sirketler = df.to_dict("records")
-    return render_template("bist.html", sirketler=sirketler, count=len(sirketler))
+    movers = bist_top_movers()
+    return render_template("bist.html", sirketler=sirketler, count=len(sirketler), movers=movers)
 
 
 @app.route("/bist/<sembol>")
@@ -60,15 +61,17 @@ def bist_detay(sembol):
     veri = bist_detay_veri(sembol)
     chart_html = None
     chart_summary = None
+    overlay_html = None
 
     indicators = request.args.getlist("ind")
     chart_type = request.args.get("chart_type", "candlestick")
+    overlay_mode = request.args.get("overlay_mode", "on")
     start = request.args.get("start")
     if start:
         end = request.args.get("end", start)
         interval = request.args.get("interval", "5m")
         try:
-            chart_html, chart_summary = grafik_ciz_html(sembol, start, end, interval, indicators or None, chart_type)
+            chart_html, chart_summary, overlay_html = grafik_ciz_html(sembol, start, end, interval, indicators or None, chart_type, overlay_mode)
         except Exception as e:
             app.logger.warning("Chart failed for %s: %s", sembol, e)
             veri["hata"] = g.t["data_unavailable"]
@@ -89,11 +92,13 @@ def bist_detay(sembol):
     return render_template("bist_detay.html",
                            sembol=sembol, veri=veri, history=history_rows,
                            chart_html=chart_html, chart_summary=chart_summary,
+                           overlay_html=overlay_html,
                            start=request.args.get("start", "2026-06-07"),
                            end=request.args.get("end", "2026-07-07"),
                            interval=request.args.get("interval", "5m"),
                            active_indicators=indicators,
-                           chart_type=chart_type)
+                           chart_type=chart_type,
+                           overlay_mode=overlay_mode)
 
 
 @app.route("/api/fundamentals/<sembol>")
@@ -119,9 +124,11 @@ def viop_detay(base):
     veri = viop_detay_veri(base, tum_df)
     chart_html = None
     chart_summary = None
+    overlay_html = None
 
     indicators = request.args.getlist("ind")
     chart_type = request.args.get("chart_type", "candlestick")
+    overlay_mode = request.args.get("overlay_mode", "on")
     sembol_param = request.args.get("sembol")
     if sembol_param:
         kod = veri["kodlar"].get(sembol_param, "")
@@ -129,7 +136,7 @@ def viop_detay(base):
         interval = request.args.get("interval", "1h")
         if start and end:
             try:
-                chart_html, chart_summary = grafik_ciz_html(sembol_param, start, end, interval, indicators or None, chart_type)
+                chart_html, chart_summary, overlay_html = grafik_ciz_html(sembol_param, start, end, interval, indicators or None, chart_type, overlay_mode)
             except Exception as e:
                 app.logger.warning("Chart failed for %s: %s", sembol_param, e)
                 veri["hata"] = g.t["data_unavailable"]
@@ -148,8 +155,10 @@ def viop_detay(base):
     return render_template("viop_detay.html",
                            base=base, veri=veri, kontratlar=kontrat_rows,
                            semboller=veri["semboller"], chart_html=chart_html, chart_summary=chart_summary,
+                           overlay_html=overlay_html,
                            interval=request.args.get("interval", "1h"),
                            chart_type=chart_type,
+                           overlay_mode=overlay_mode,
                            active_indicators=indicators)
 
 

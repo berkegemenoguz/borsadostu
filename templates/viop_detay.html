@@ -66,6 +66,14 @@
                 </div>
                 <input type="hidden" name="chart_type" id="ct-input" value="{{ chart_type }}">
             </div>
+            <div class="form-group">
+                <label>{{ t.overlays_label if t.overlays_label is defined else 'Overlay' }}</label>
+                <div class="chart-type-btns">
+                    <button type="button" class="ct-btn{{ ' active' if overlay_mode != 'separate' }}" style="width:auto;padding:0 12px;font-size:12px;font-weight:700;font-family:'Cabinet Grotesk',sans-serif;" onclick="document.getElementById('om-input').value='on';this.parentNode.querySelectorAll('.ct-btn').forEach(function(b){b.classList.remove('active')});this.classList.add('active');">{{ t.overlay_on if t.overlay_on is defined else 'Birlikte' }}</button>
+                    <button type="button" class="ct-btn{{ ' active' if overlay_mode == 'separate' }}" style="width:auto;padding:0 12px;font-size:12px;font-weight:700;font-family:'Cabinet Grotesk',sans-serif;" onclick="document.getElementById('om-input').value='separate';this.parentNode.querySelectorAll('.ct-btn').forEach(function(b){b.classList.remove('active')});this.classList.add('active');">{{ t.overlay_sep if t.overlay_sep is defined else 'Ayrı' }}</button>
+                </div>
+                <input type="hidden" name="overlay_mode" id="om-input" value="{{ overlay_mode }}">
+            </div>
             <button type="submit" class="btn">{{ t.generate }}</button>
         </div>
         <div class="ind-toggle" onclick="var b=document.getElementById('ind-body');var a=document.getElementById('ind-arrow');if(b.style.display==='none'){b.style.display='block';a.textContent='▼';}else{b.style.display='none';a.textContent='▶';}">
@@ -102,9 +110,14 @@
     </form>
 
     {% if chart_html %}
-    <div class="chart-container">
-        {{ chart_html | safe }}
-    </div>
+        {% if overlay_html %}
+        <div class="chart-split">
+            <div class="chart-container">{{ chart_html | safe }}</div>
+            <div class="chart-container">{{ overlay_html | safe }}</div>
+        </div>
+        {% else %}
+        <div class="chart-container">{{ chart_html | safe }}</div>
+        {% endif %}
     {% endif %}
 </div>
 

@@ -1,8 +1,29 @@
 {% extends "base.html" %}
 {% block title %}BIST — Borsa Dostu{% endblock %}
 {% block content %}
-<h1>{{ t.bist_title }} <span style="color:#999; font-size:16px; font-weight:400;">{{ count }} {{ t.companies }}</span></h1>
-<input type="text" class="search-box" id="search" placeholder="{{ t.search_placeholder }}" oninput="filterTable()">
+<style>.hl{color:#54d6ff;font-weight:700;}</style>
+<h1>{{ t.bist_title }} <span style="color:#5a6779; font-size:16px; font-weight:400;">{{ count }} {{ t.companies }}</span></h1>
+
+<div class="tick-toolbar">
+    <div class="search-wrap">
+        <input type="text" class="tick-search" id="search" placeholder="{{ t.search_placeholder }}" oninput="applyView()" autocomplete="off">
+        <button class="filter-btn" id="fbtn" onclick="togglePop(event)" aria-label="Filtrele">
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 4.5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="filter-pop" id="pop">
+            <div class="pop-h">Sırala / Filtrele</div>
+            <button class="pop-opt on" onclick="setSort('az',this)">A → Z</button>
+            <button class="pop-opt" onclick="setSort('za',this)">Z → A</button>
+            <button class="pop-opt" onclick="setSort('gain',this)">En çok yükselenler <small>7g</small></button>
+            <button class="pop-opt" onclick="setSort('lose',this)">En çok düşenler <small>7g</small></button>
+            <button class="pop-opt" onclick="setSort('active',this)">En hacimli</button>
+            <button class="pop-opt" onclick="setSort('recent',this)">Son bakılanlar</button>
+            <button class="pop-opt" onclick="setSort('city',this)">Şehre göre</button>
+        </div>
+    </div>
+    <span class="tick-count"><b id="count">{{ count }}</b> / {{ count }}</span>
+</div>
+
 <div style="overflow-x:auto;">
     <table id="company-table">
         <thead>
@@ -10,27 +31,153 @@
                 <th style="width:50px;">#</th>
                 <th style="width:100px;">{{ t.ticker }}</th>
                 <th>{{ t.company }}</th>
+                <th style="width:160px;">{{ t.city }}</th>
+                <th class="text-right" style="width:90px;" id="chg-th"></th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="tbody">
             {% for s in sirketler %}
-            <tr>
-                <td class="text-center mono">{{ loop.index }}</td>
+            <tr data-t="{{ s.ticker }}" data-city="{{ (s.city or '')|upper }}">
+                <td class="text-center mono"></td>
                 <td><a href="/bist/{{ s.ticker }}" class="mono">{{ s.ticker }}</a></td>
                 <td>{{ s.name }}</td>
+                <td class="mono" style="color:#8a98ab;font-size:12px;">{{ s.city or '—' }}</td>
+                <td class="text-right mono chg-cell"></td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<script src="/static/search.js"></script>
 <script>
-function filterTable(){
-    var q = document.getElementById("search").value.toUpperCase();
-    var rows = document.querySelectorAll("#company-table tbody tr");
-    rows.forEach(function(row){
-        var text = row.textContent.toUpperCase();
-        row.style.display = text.indexOf(q) > -1 ? "" : "none";
-    });
+var GAIN = {{ (movers.gainers if movers else [])|tojson }};
+var LOSE = {{ (movers.losers if movers else [])|tojson }};
+var ACTIVE = {{ (movers.active if movers else [])|tojson }};
+var chgMap = {}, volMap = {}, activeRank = {};
+GAIN.concat(LOSE).forEach(function(m){ chgMap[m.symbol] = m.change; });
+ACTIVE.forEach(function(m, i){ volMap[m.symbol] = m.volume_str; activeRank[m.symbol] = i; });
+var RECENT = [];
+try { RECENT = JSON.parse(localStorage.getItem("bd_recent") || "[]"); } catch(e){}
+var recentRank = {};
+RECENT.forEach(function(sym, i){ recentRank[sym] = i; });
+var sortMode = "az";
+var topHref = null;
+
+var tbody = document.getElementById("tbody");
+// Build the search index once; reading cell text now captures the original
+// (un-highlighted) names before any keystroke rewrites them.
+var CACHE = Array.prototype.slice.call(tbody.querySelectorAll("tr")).map(function(r){
+    var tOrig = r.dataset.t;
+    var nOrig = r.cells[2].textContent;
+    return {
+        row: r,
+        tOrig: tOrig,
+        nOrig: nOrig,
+        tNorm: BD.norm(tOrig),
+        nNorm: BD.norm(nOrig),
+        cNorm: BD.norm(r.dataset.city)
+    };
+});
+
+function scoreRow(c, q){
+    if(BD.ALIAS[q] && BD.ALIAS[q] === c.tOrig) return 3000;   // popular-name alias
+    var t = c.tNorm, n = c.nNorm, ci = c.cNorm;
+    if(t === q) return 1000;                                  // exact ticker
+    if(t.indexOf(q) === 0) return 900;                        // ticker prefix
+    if((" " + n).indexOf(" " + q) > -1) return 800;           // name word start
+    if(n.indexOf(q) === 0) return 780;                        // name prefix
+    if(t.indexOf(q) > -1) return 600;                         // ticker contains
+    if(n.indexOf(q) > -1) return 500;                         // name contains
+    if(ci && (" " + ci).indexOf(" " + q) > -1) return 400;    // city word start
+    if(ci && ci.indexOf(q) > -1) return 350;                  // city contains
+    if(BD.subseq(q, t)) return 200;                           // fuzzy ticker
+    if(BD.subseq(q, n)) return 150;                           // fuzzy name
+    return -1;
 }
+
+function togglePop(e){
+    e.stopPropagation();
+    document.getElementById("pop").classList.toggle("open");
+    document.getElementById("fbtn").classList.toggle("open");
+}
+document.addEventListener("click", function(){
+    document.getElementById("pop").classList.remove("open");
+    document.getElementById("fbtn").classList.remove("open");
+});
+document.getElementById("pop").addEventListener("click", function(e){ e.stopPropagation(); });
+
+function setSort(mode, el){
+    sortMode = mode;
+    document.querySelectorAll(".pop-opt").forEach(function(o){ o.classList.remove("on"); });
+    el.classList.add("on");
+    document.getElementById("pop").classList.remove("open");
+    document.getElementById("fbtn").classList.remove("open");
+    applyView();
+}
+
+document.getElementById("search").addEventListener("keydown", function(e){
+    if(e.key === "Enter" && topHref){ window.location = topHref; }
+});
+
+function applyView(){
+    var q = BD.norm(document.getElementById("search").value);
+    var showChg = (sortMode === "gain" || sortMode === "lose") && !q;
+    var showVol = (sortMode === "active") && !q;
+    document.getElementById("chg-th").textContent = showChg ? "7g %" : (showVol ? "Hacim" : "");
+
+    // filter
+    var vis = [];
+    CACHE.forEach(function(c){
+        var keep;
+        if(q){
+            c._s = scoreRow(c, q);
+            keep = c._s >= 0;
+        } else {
+            c._s = 0;
+            keep = true;
+            if(sortMode === "gain")   keep = GAIN.some(function(m){ return m.symbol === c.tOrig; });
+            if(sortMode === "lose")   keep = LOSE.some(function(m){ return m.symbol === c.tOrig; });
+            if(sortMode === "active") keep = c.tOrig in activeRank;
+            if(sortMode === "recent") keep = c.tOrig in recentRank;
+        }
+        if(keep) vis.push(c);
+    });
+
+    // sort — by relevance when searching, otherwise by the chosen mode
+    vis.sort(function(a, b){
+        if(q){ return b._s !== a._s ? b._s - a._s : a.tOrig.localeCompare(b.tOrig); }
+        if(sortMode === "za") return b.tOrig.localeCompare(a.tOrig);
+        if(sortMode === "city"){ var cc = a.cNorm.localeCompare(b.cNorm); return cc !== 0 ? cc : a.tOrig.localeCompare(b.tOrig); }
+        if(sortMode === "gain" || sortMode === "lose") return (chgMap[b.tOrig] || 0) - (chgMap[a.tOrig] || 0);
+        if(sortMode === "active") return activeRank[a.tOrig] - activeRank[b.tOrig];
+        if(sortMode === "recent") return recentRank[a.tOrig] - recentRank[b.tOrig];
+        return a.tOrig.localeCompare(b.tOrig);
+    });
+
+    // render
+    CACHE.forEach(function(c){ c.row.style.display = "none"; });
+    vis.forEach(function(c, i){
+        var r = c.row;
+        r.style.display = "";
+        r.cells[0].textContent = i + 1;
+        r.cells[1].querySelector("a").innerHTML = BD.hl(c.tOrig, c.tNorm, q);
+        r.cells[2].innerHTML = BD.hl(c.nOrig, c.nNorm, q);
+        var cell = r.querySelector(".chg-cell");
+        if(showChg){
+            var v = chgMap[c.tOrig];
+            cell.textContent = (v >= 0 ? "▲" : "▼") + Math.abs(v).toFixed(2) + "%";
+            cell.className = "text-right mono chg-cell " + (v >= 0 ? "green" : "red");
+        } else if(showVol){
+            cell.textContent = volMap[c.tOrig] || "";
+            cell.className = "text-right mono chg-cell";
+            cell.style.color = "#8a98ab";
+        } else { cell.textContent = ""; cell.className = "text-right mono chg-cell"; cell.style.color = ""; }
+        tbody.appendChild(r);
+    });
+    document.getElementById("count").textContent = vis.length;
+    topHref = vis.length ? vis[0].row.cells[1].querySelector("a").getAttribute("href") : null;
+}
+applyView();
 </script>
 {% endblock %}

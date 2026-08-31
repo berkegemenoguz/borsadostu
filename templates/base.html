@@ -15,7 +15,7 @@
             min-height: 100vh;
         }
         a { color: #333; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        a:hover { text-decoration: none; }
 
         .navbar {
             background: #fff;
@@ -205,6 +205,15 @@
 
         .chart-container { width: 100%; min-height: 500px; margin-top: 16px; margin-left: 0; padding-left: 0; overflow-x: auto; }
         .chart-container .js-plotly-plot { margin-left: 0 !important; }
+        /* break out of the page container to use (most of) the monitor width,
+           symmetrically centered so nothing gets clipped */
+        .chart-split { display: flex; gap: 20px; align-items: flex-start;
+            width: 96vw; position: relative; left: 50%; transform: translateX(-50%);
+            background: #0c121b; border: 1px solid #1a2230; padding: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.45); }
+        .chart-split > .chart-container { flex: 1 1 0; min-width: 0; margin-top: 0;
+            border: 1px solid #1a2230; }
+        @media (max-width: 900px) { .chart-split { flex-direction: column; width: 100%; left: 0; transform: none; } }
 
         .card-toggle {
             display: flex;
@@ -295,7 +304,7 @@
         }
 
         /* ===== DARK THEME (site-wide) ===== */
-        body{background:#05080d;color:#cfd6e0}
+        body{background:#05080d;color:#cfd6e0;overflow-x:hidden}
         a{color:#cfd6e0}
         .navbar{background:#0c121b;border-bottom-color:#1a2230;box-shadow:0 2px 8px rgba(0,0,0,.5)}
         .nav-left a{color:#8a98ab}
@@ -351,6 +360,32 @@
         .loading-text{color:#8a98ab}
         input[type=checkbox]{accent-color:#54d6ff}
         ::selection{background:#54d6ff;color:#05080d}
+
+        /* ===== list pages: search toolbar ===== */
+        .tick-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:4px 0 16px}
+        .tick-search{flex:1;min-width:220px;max-width:420px;background:#0e1520;border:1px solid #1a2230;color:#eef2f7;padding:11px 14px;font-family:'Satoshi',sans-serif;font-size:14px}
+        .tick-search:focus{outline:none;border-color:#54d6ff;box-shadow:0 0 0 1px #54d6ff}
+        .tick-search::placeholder{color:#5a6779}
+        .az-select{background:#0e1520 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.5l4 4 4-4' stroke='%2354d6ff' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 13px center;background-size:12px;
+            border:1px solid #1a2230;color:#eef2f7;padding:11px 30px 11px 12px;font-family:'Satoshi',sans-serif;font-size:14px;
+            cursor:pointer;-webkit-appearance:none;appearance:none;min-width:88px;width:88px;transition:border-color .15s,box-shadow .15s}
+        .az-select:hover{border-color:#3a4553}
+        .az-select:focus{outline:none;border-color:#54d6ff;box-shadow:0 0 0 1px #54d6ff}
+        .az-select option{background:#0c121b;color:#eef2f7}
+        .tick-count{font-family:"SF Mono","Fira Code",monospace;font-size:12px;color:#8a98ab;white-space:nowrap;margin-left:auto}
+        /* search bar with filter popup */
+        .search-wrap{position:relative;flex:1;min-width:220px;max-width:420px;display:flex}
+        .search-wrap .tick-search{flex:1;max-width:none;padding-right:44px}
+        .filter-btn{position:absolute;right:0;top:0;height:100%;width:40px;background:transparent;border:none;border-left:1px solid #1a2230;color:#54d6ff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+        .filter-btn:hover{background:#0e1520}
+        .filter-btn.open{background:#0e1520}
+        .filter-pop{position:absolute;top:calc(100% + 6px);right:0;z-index:50;background:#0c121b;border:1px solid #1a2230;box-shadow:0 14px 34px rgba(0,0,0,.55);min-width:230px;display:none}
+        .filter-pop.open{display:block}
+        .pop-h{font-family:"SF Mono","Fira Code",monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#5a6779;padding:12px 14px 8px}
+        .pop-opt{display:block;width:100%;text-align:left;background:transparent;border:none;color:#cfd6e0;font-family:'Satoshi',sans-serif;font-size:13.5px;padding:10px 14px;cursor:pointer;border-top:1px solid #141b24}
+        .pop-opt:hover{background:#0e1520;color:#eef2f7}
+        .pop-opt.on{color:#54d6ff;background:#0e1520}
+        .pop-opt small{color:#5a6779;font-size:11px;margin-left:6px}
     </style>
 </head>
 <body>

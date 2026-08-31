@@ -16,10 +16,18 @@
         background:linear-gradient(180deg, rgba(5,8,13,.6) 0%, rgba(5,8,13,0) 30%, rgba(5,8,13,0) 100%)}
     .up{color:var(--green)} .down{color:var(--red)}
 
-    .xticker{position:relative;z-index:2;overflow:hidden;height:34px;border-bottom:1px solid var(--line);background:rgba(8,11,18,.5);backdrop-filter:blur(3px)}
-    .xtrack{display:flex;width:max-content;padding:8px 0;animation:xscroll 40s linear infinite}
-    .xitem{font-family:var(--mono);font-size:12.5px;color:var(--muted);display:flex;gap:6px;flex-shrink:0;padding-right:32px}
-    .xitem .xs{color:var(--ink)}
+    .xticker{position:relative;z-index:2;overflow:hidden;height:40px;border-bottom:1px solid var(--line);
+        background:linear-gradient(180deg,rgba(12,18,27,.65),rgba(8,11,18,.5));backdrop-filter:blur(4px);
+        -webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);
+        mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+    .xtrack{display:flex;width:max-content;height:100%;align-items:center;animation:xscroll 40s linear infinite}
+    .xitem{display:flex;align-items:center;gap:9px;flex-shrink:0;height:100%;padding:0 18px;border-right:1px solid var(--line)}
+    .xitem .xs{font-family:var(--disp);font-weight:700;letter-spacing:-.2px;font-size:13px;color:var(--ink)}
+    .xitem .xp{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+    .xitem .xc{font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 6px;font-variant-numeric:tabular-nums}
+    .xitem .xc.up{color:var(--green);background:rgba(42,208,127,.12)}
+    .xitem .xc.down{color:var(--red);background:rgba(255,77,94,.12)}
+    .xitem.xidx{background:rgba(84,214,255,.06)}
     .xitem.xidx .xs{color:var(--cyan)}
     @keyframes xscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
@@ -115,13 +123,13 @@
 {% if ticker_data %}
 <div class="xticker">
     <div class="xtrack">
-        {% if xu100 %}<div class="xitem xidx"><span class="xs">BIST 100</span> {{ xu100.value }} <span class="{{ 'up' if xu100.pos else 'down' }}">{{ "▲" if xu100.pos else "▼" }}{{ "%.2f"|format(xu100.change|abs) }}%</span></div>{% endif %}
+        {% if xu100 %}<div class="xitem xidx"><span class="xs">BIST 100</span><span class="xp">{{ xu100.value }}</span><span class="xc {{ 'up' if xu100.pos else 'down' }}">{{ "▲" if xu100.pos else "▼" }}{{ "%.2f"|format(xu100.change|abs) }}%</span></div>{% endif %}
         {% for item in ticker_data %}
-        <div class="xitem"><span class="xs">{{ item.symbol }}</span> {{ item.price }} <span class="{{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
+        <div class="xitem"><span class="xs">{{ item.symbol }}</span><span class="xp">{{ item.price }}</span><span class="xc {{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
         {% endfor %}
-        {% if xu100 %}<div class="xitem xidx"><span class="xs">BIST 100</span> {{ xu100.value }} <span class="{{ 'up' if xu100.pos else 'down' }}">{{ "▲" if xu100.pos else "▼" }}{{ "%.2f"|format(xu100.change|abs) }}%</span></div>{% endif %}
+        {% if xu100 %}<div class="xitem xidx"><span class="xs">BIST 100</span><span class="xp">{{ xu100.value }}</span><span class="xc {{ 'up' if xu100.pos else 'down' }}">{{ "▲" if xu100.pos else "▼" }}{{ "%.2f"|format(xu100.change|abs) }}%</span></div>{% endif %}
         {% for item in ticker_data %}
-        <div class="xitem"><span class="xs">{{ item.symbol }}</span> {{ item.price }} <span class="{{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
+        <div class="xitem"><span class="xs">{{ item.symbol }}</span><span class="xp">{{ item.price }}</span><span class="xc {{ 'up' if item.pos else 'down' }}">{{ "▲" if item.pos else "▼" }}{{ "%.2f"|format(item.change|abs) }}%</span></div>
         {% endfor %}
     </div>
 </div>

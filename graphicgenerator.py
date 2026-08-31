@@ -231,8 +231,14 @@ def _fetch_history(sembol, start, end, interval, attempts=3):
     raise last_err
 
 
-def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick"):
-    df = _fetch_history(sembol, start, end, interval)
+OVERLAY_INDS = {"sma20", "sma50", "sma200", "ema20", "ema50", "bb", "sr", "vwap", "supertrend"}
+
+
+def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick", df=None):
+    if df is None:
+        df = _fetch_history(sembol, start, end, interval)
+    else:
+        df = df.copy()
 
     if df.empty:
         return None
@@ -273,15 +279,11 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
     has_obv = bool(indicators and "obv" in indicators)
     extra_panels = int(has_rsi) + int(has_macd) + int(has_atr) + int(has_adx) + int(has_obv)
 
+    # Fixed pixel heights: the price panel never shrinks — each extra panel
+    # extends the chart downward instead of compressing the candlesticks.
+    PRICE_PX, VOL_PX, PANEL_PX = 450, 130, 130
     total_rows = 2 + extra_panels
-    if extra_panels == 0:
-        row_heights = [0.75, 0.25]
-    elif extra_panels == 1:
-        row_heights = [0.60, 0.20, 0.20]
-    elif extra_panels == 2:
-        row_heights = [0.50, 0.16, 0.17, 0.17]
-    else:
-        row_heights = [0.45, 0.13] + [0.14] * extra_panels
+    row_heights = [PRICE_PX, VOL_PX] + [PANEL_PX] * extra_panels
 
     fig = make_subplots(
         rows=total_rows, cols=1, shared_xaxes=True,
@@ -600,7 +602,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         **({"yaxis" + str(adx_row) + "_title": "ADX"} if has_adx else {}),
         **({"yaxis" + str(obv_row) + "_title": "OBV"} if has_obv else {}),
         legend=dict(bgcolor="#0c121b", bordercolor="#1a2230"),
-        height=700 + extra_panels * 120,
+        height=700 + extra_panels * 130,
         margin=dict(b=100),
         annotations=sr_annotations,
         newshape=dict(line_color="#ffab00", line_width=2),
@@ -648,16 +650,55 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
 
     return fig, summary
 
-def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick"):
-    result = _build_figure(sembol, start, end, interval, indicators, chart_type)
-    if result is None:
-        return None, None
+OVERLAY_MB_SCRIPT = """<script>
+(function waitMB(){
+  var gd = document.getElementById("grafik-overlay");
+  if(!gd){ setTimeout(waitMB, 200); return; }
+  var mb = gd.querySelector(".modebar");
+  if(!mb){ setTimeout(waitMB, 200); return; }
+  mb.style.transform = window.innerWidth <= 768 ? "scale(1.6)" : "scale(1.3)";
+  mb.style.transformOrigin = "top right";
+  gd.addEventListener("wheel", function(e){ e.preventDefault(); }, {passive: false});
+})();
+</script>"""
 
+
+def _fig_to_div(fig, div_id):
+    return fig.to_html(full_html=False, include_plotlyjs=False, config=PLOTLY_CONFIG, div_id=div_id)
+
+
+def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None,
+                    chart_type="candlestick", overlay_mode="on"):
+    indicators = indicators or []
+    overlays = [i for i in indicators if i in OVERLAY_INDS]
+
+    # separate mode only makes sense when there are overlays to pull out
+    if overlay_mode == "separate" and overlays:
+        df = _fetch_history(sembol, start, end, interval)
+        panels = [i for i in indicators if i not in OVERLAY_INDS]
+        main = _build_figure(sembol, start, end, interval, panels or None, chart_type, df=df)
+        if main is None:
+            return None, None, None
+        main_fig, summary = main
+        ov = _build_figure(sembol, start, end, interval, overlays, "line", df=df)
+        ov_fig = ov[0]
+        # overlay is the right-hand chart, so put its y-axis numbers on the
+        # right (outer) side instead of the seam between the two charts
+        ov_fig.update_layout(height=main_fig.layout.height,
+                             title=f"{sembol}  |  Overlays",
+                             paper_bgcolor="rgba(0,0,0,0)",
+                             margin_l=12, margin_r=54,
+                             legend=dict(x=0.005, y=0.99, xanchor="left", yanchor="top",
+                                         bgcolor="rgba(12,18,27,0.6)", bordercolor="#1a2230"))
+        ov_fig.update_yaxes(side="right", title_text="")
+        # transparent paper on the main too, so neither shows a black margin band
+        main_fig.update_layout(paper_bgcolor="rgba(0,0,0,0)")
+        main_html = _fig_to_div(main_fig, "grafik-container") + FIB_SCRIPT_EMBED
+        overlay_html = _fig_to_div(ov_fig, "grafik-overlay") + OVERLAY_MB_SCRIPT
+        return main_html, summary, overlay_html
+
+    result = _build_figure(sembol, start, end, interval, indicators or None, chart_type)
+    if result is None:
+        return None, None, None
     fig, summary = result
-    chart_div = fig.to_html(
-        full_html=False,
-        include_plotlyjs=False,
-        config=PLOTLY_CONFIG,
-        div_id="grafik-container",
-    )
-    return chart_div + FIB_SCRIPT_EMBED, summary
+    return _fig_to_div(fig, "grafik-container") + FIB_SCRIPT_EMBED, summary, None

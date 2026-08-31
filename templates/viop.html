@@ -1,9 +1,22 @@
 {% extends "base.html" %}
 {% block title %}VIOP — Borsa Dostu{% endblock %}
 {% block content %}
-<h1>{{ t.viop_title }} <span style="color:#999; font-size:16px; font-weight:400;">{{ count }} {{ t.stocks }}</span></h1>
+<style>.hl{color:#54d6ff;font-weight:700;}</style>
+<h1>{{ t.viop_title }} <span style="color:#5a6779; font-size:16px; font-weight:400;">{{ count }} {{ t.stocks }}</span></h1>
+
+<div class="tick-toolbar">
+    <input type="text" class="tick-search" id="search" placeholder="{{ t.search_placeholder }}" oninput="applyFilter()" autocomplete="off">
+    <select class="az-select" id="az" onchange="applyFilter()">
+        <option value="">A → Z</option>
+        {% for c in 'ABCDEFGHIJKLMNOPRSTUVYZ' %}
+        <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
+    </select>
+    <span class="tick-count"><b id="count">{{ count }}</b> / {{ count }}</span>
+</div>
+
 <div style="overflow-x:auto;">
-    <table>
+    <table id="viop-table">
         <thead>
             <tr>
                 <th style="width:50px;">#</th>
@@ -12,10 +25,10 @@
                 <th class="text-right">{{ t.total_volume }}</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="vbody">
             {% for r in rows %}
-            <tr>
-                <td class="text-center mono">{{ loop.index }}</td>
+            <tr data-l="{{ r.base[0] }}">
+                <td class="text-center mono"></td>
                 <td><a href="/viop/{{ r.base }}" class="mono">{{ r.base }}</a></td>
                 <td class="text-right mono">{{ r.kontrat }}</td>
                 <td class="text-right mono">{{ "{:,.0f}".format(r.hacim) }}</td>
@@ -24,4 +37,56 @@
         </tbody>
     </table>
 </div>
+
+<script src="/static/search.js"></script>
+<script>
+var vbody = document.getElementById("vbody");
+var topHref = null;
+var CACHE = Array.prototype.slice.call(vbody.querySelectorAll("tr")).map(function(r){
+    var bOrig = r.cells[1].textContent;
+    return { row: r, bOrig: bOrig, bNorm: BD.norm(bOrig), letter: r.dataset.l };
+});
+
+function scoreRow(c, q){
+    var b = c.bNorm;
+    if(BD.ALIAS[q] && BD.ALIAS[q] === c.bOrig) return 3000;
+    if(b === q) return 1000;
+    if(b.indexOf(q) === 0) return 900;
+    if(b.indexOf(q) > -1) return 600;
+    if(BD.subseq(q, b)) return 200;
+    return -1;
+}
+
+document.getElementById("search").addEventListener("keydown", function(e){
+    if(e.key === "Enter" && topHref){ window.location = topHref; }
+});
+
+function applyFilter(){
+    var q = BD.norm(document.getElementById("search").value);
+    var ltr = document.getElementById("az").value;
+
+    var vis = [];
+    CACHE.forEach(function(c){
+        var okL = !ltr || c.letter === ltr;
+        var keep;
+        if(q){ c._s = scoreRow(c, q); keep = okL && c._s >= 0; }
+        else { c._s = 0; keep = okL; }
+        if(keep) vis.push(c);
+    });
+
+    if(q){ vis.sort(function(a, b){ return b._s !== a._s ? b._s - a._s : a.bOrig.localeCompare(b.bOrig); }); }
+
+    CACHE.forEach(function(c){ c.row.style.display = "none"; });
+    vis.forEach(function(c, i){
+        var r = c.row;
+        r.style.display = "";
+        r.cells[0].textContent = i + 1;
+        r.cells[1].querySelector("a").innerHTML = BD.hl(c.bOrig, c.bNorm, q);
+        vbody.appendChild(r);
+    });
+    document.getElementById("count").textContent = vis.length;
+    topHref = vis.length ? vis[0].row.cells[1].querySelector("a").getAttribute("href") : null;
+}
+applyFilter();
+</script>
 {% endblock %}

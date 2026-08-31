@@ -165,9 +165,13 @@ def bist_detay_veri(sembol):
         return result
 
     try:
-        result["info"] = ticker.info
+        info = ticker.info
+        info.get("last")  # force the lazy load; raises here if the ticker has no data
+        result["info"] = info
     except Exception:
-        pass
+        result["info"] = None
+        result["hata"] = f"'{sembol}' için veri alınamadı."
+        return result
 
     try:
         result["fast_info"] = ticker.fast_info
