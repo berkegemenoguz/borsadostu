@@ -145,9 +145,18 @@ def bist_xu100():
         return None
 
 
+_sirket_cache = {"data": None, "time": 0}
+SIRKET_TTL = 3600  # şirket listesi neredeyse hiç değişmez → 1 saat cache
+
+
 def bist_sirketler():
+    now = time.time()
+    if _sirket_cache["data"] is not None and (now - _sirket_cache["time"]) < SIRKET_TTL:
+        return _sirket_cache["data"]
     sirketler = bp.companies()
     df = pd.DataFrame(sirketler)
+    _sirket_cache["data"] = df
+    _sirket_cache["time"] = now
     return df
 
 

@@ -425,6 +425,11 @@
     document.querySelectorAll("a[href*='/bist/'], a[href*='/viop/']").forEach(function(a){
         a.addEventListener("click", function(){ document.getElementById("loading").classList.add("active"); });
     });
+    // Clear the loading overlay on show — incl. Safari back/forward (bfcache)
+    // restores, where the page comes back frozen with the overlay still active.
+    window.addEventListener("pageshow", function(){
+        document.getElementById("loading").classList.remove("active");
+    });
     </script>
     {% endblock %}
 </body>
