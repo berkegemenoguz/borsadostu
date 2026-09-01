@@ -7,6 +7,7 @@ from rates import get_rates
 from translations import TRANSLATIONS
 from concurrent.futures import ThreadPoolExecutor
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 # borsapy's websocket layer logs every connect/close at INFO, which floods the
@@ -14,6 +15,20 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("websocket").setLevel(logging.ERROR)
 
 app = Flask(__name__)
+# Static assets are cached hard and busted by mtime instead: the vendored chart
+# library is 193 KB and was being revalidated on every page load.
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60 * 60 * 24 * 30
+
+
+@app.context_processor
+def inject_static_v():
+    def static_v(path):
+        try:
+            stamp = int(os.path.getmtime(os.path.join(app.static_folder, path)))
+        except OSError:
+            stamp = 0
+        return f"/static/{path}?v={stamp}"
+    return {"static_v": static_v}
 
 
 @app.before_request

@@ -120,8 +120,8 @@
         <div class="chart-container"><div id="lw-main"></div></div>
         {% endif %}
         <div class="chart-panels{% if not split %} chart-panels-full{% endif %}"><div id="lw-panels"></div></div>
-        <script src="/static/lightweight-charts.js"></script>
-        <script src="/static/charts.js"></script>
+        <script src="{{ static_v('lightweight-charts.js') }}"></script>
+        <script src="{{ static_v('charts.js') }}"></script>
         <script>
         BDCharts.build({
             url: {{ chart_url | tojson }},
