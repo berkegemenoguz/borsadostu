@@ -1,6 +1,7 @@
 import borsapy as bp
 import pandas as pd
 import re
+from borsa_limit import guarded
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from graphicgenerator import grafik_ciz_html
@@ -41,7 +42,7 @@ def kontrat_tarih_araligi(code):
 
 def gecmis_getir(sembol):
     try:
-        df = bp.Ticker(sembol).history(period="5g", interval="1h")
+        df = guarded(lambda: bp.Ticker(sembol).history(period="5g", interval="1h"))
         return sembol, df
     except Exception:
         return sembol, None

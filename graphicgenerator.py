@@ -1,5 +1,6 @@
 import borsapy as bp
 import time
+from borsa_limit import guarded
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
@@ -220,7 +221,7 @@ def _fetch_history(sembol, start, end, interval, attempts=3):
     last_err = None
     for i in range(attempts):
         try:
-            return bp.Ticker(sembol).history(start=start, end=end, interval=interval)
+            return guarded(lambda: bp.Ticker(sembol).history(start=start, end=end, interval=interval))
         except Exception as e:
             last_err = e
             # a bad ticker will never succeed, so don't burn retries on it

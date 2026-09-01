@@ -2,6 +2,7 @@ import borsapy as bp
 import pandas as pd
 import logging
 import time
+from borsa_limit import guarded
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor
 from graphicgenerator import grafik_ciz_html
@@ -18,6 +19,9 @@ TOP_MOVERS_SYMBOLS = [
 _ticker_cache = {"data": [], "time": 0}
 _movers_cache = {"data": [], "time": 0}
 CACHE_TTL = 300
+# Movers report a 7-day change over 30 symbols — by far the heaviest fetch on
+# the home page, and a weekly metric gains nothing from 5-minute refreshes.
+MOVERS_TTL = 3600
 _log = logging.getLogger(__name__)
 _detay_cache = {}
 _mcap_cache = {}
@@ -37,8 +41,8 @@ def _cache_put(cache, key, data, now):
 def _fetch_one(sym):
     for attempt in range(2):
         try:
-            info = bp.Ticker(sym).info
-            info.get("last")
+            info = guarded(lambda: bp.Ticker(sym).info)
+            guarded(info.get, "last")
             return {"symbol": sym, "price": f"{info.get('last', 0):.2f}",
                     "change": info.get("change_percent", 0),
                     "pos": info.get("change_percent", 0) >= 0}
@@ -85,7 +89,7 @@ def _spark_points(closes, width=60, height=20, pad=2):
 def _fetch_weekly_change(sym):
     try:
         t = bp.Ticker(sym)
-        df = t.history(period="5g", interval="1d")
+        df = guarded(t.history, period="5g", interval="1d")
         if df.empty or len(df) < 2:
             return None
         closes = df["Close"].tolist()
@@ -118,9 +122,9 @@ def _format_volume(v):
 
 def bist_top_movers():
     now = time.time()
-    if _movers_cache["data"] and (now - _movers_cache["time"]) < CACHE_TTL:
+    if _movers_cache["data"] and (now - _movers_cache["time"]) < MOVERS_TTL:
         return _movers_cache["data"]
-    with ThreadPoolExecutor(max_workers=15) as pool:
+    with ThreadPoolExecutor(max_workers=5) as pool:
         results = list(pool.map(_fetch_weekly_change, TOP_MOVERS_SYMBOLS))
     items = [r for r in results if r]
     items.sort(key=lambda x: x["change"], reverse=True)
@@ -140,8 +144,8 @@ def bist_xu100():
         return _xu100_cache["data"]
     try:
         t = bp.Ticker("XU100")
-        info = t.info
-        df = t.history(period="5g", interval="1h")
+        info = guarded(lambda: t.info)
+        df = guarded(t.history, period="5g", interval="1h")
         closes = df["Close"].tolist() if not df.empty else []
         data = {
             "value": f"{info.get('last', 0):,.2f}",
@@ -188,8 +192,8 @@ def bist_detay_veri(sembol):
         return result
 
     try:
-        info = ticker.info
-        info.get("last")  # force the lazy load; raises here if the ticker has no data
+        info = guarded(lambda: ticker.info)
+        guarded(info.get, "last")  # force the lazy load; raises if the ticker has no data
         result["info"] = info
     except Exception as e:
         # Log the real upstream error — swallowing it silently made live
@@ -218,8 +222,8 @@ def bist_detay_veri(sembol):
     # a separate 2-6s call and are loaded afterwards via bist_fundamentals().
     info = result["info"]
     warmers = [
-        lambda: info and info.get("last"),
-        lambda: result.__setitem__("history", ticker.history(period="5g", interval="1h")),
+        lambda: info and guarded(info.get, "last"),
+        lambda: result.__setitem__("history", guarded(ticker.history, period="5g", interval="1h")),
     ]
     with ThreadPoolExecutor(max_workers=len(warmers)) as pool:
         list(pool.map(_warm, warmers))
@@ -255,7 +259,7 @@ def bist_fundamentals(sembol):
         info, fi = detay["data"]["info"], detay["data"]["fast_info"]
     else:
         tk = bp.Ticker(sembol)
-        info, fi = tk.info, tk.fast_info
+        info, fi = guarded(lambda: tk.info), guarded(lambda: tk.fast_info)
 
     def _warm(fn):
         try:
