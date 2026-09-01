@@ -235,7 +235,12 @@ def _fetch_history(sembol, start, end, interval, attempts=3):
 OVERLAY_INDS = {"sma20", "sma50", "sma200", "ema20", "ema50", "bb", "sr", "vwap", "supertrend"}
 
 
-def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick", df=None):
+def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type="candlestick",
+                  df=None, lean=False):
+    """lean: drop the volume row and the invisible Fibonacci click markers.
+    Used for the split-view overlay chart, where volume is already shown on the
+    main chart and the drawing tools only run there — together they were ~3.3k
+    SVG elements redrawn on every zoom step."""
     if df is None:
         df = _fetch_history(sembol, start, end, interval)
     else:
@@ -283,8 +288,12 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
     # Fixed pixel heights: the price panel never shrinks — each extra panel
     # extends the chart downward instead of compressing the candlesticks.
     PRICE_PX, VOL_PX, PANEL_PX = 450, 130, 130
-    total_rows = 2 + extra_panels
-    row_heights = [PRICE_PX, VOL_PX] + [PANEL_PX] * extra_panels
+    if lean:
+        total_rows = 1 + extra_panels
+        row_heights = [PRICE_PX] + [PANEL_PX] * extra_panels
+    else:
+        total_rows = 2 + extra_panels
+        row_heights = [PRICE_PX, VOL_PX] + [PANEL_PX] * extra_panels
 
     fig = make_subplots(
         rows=total_rows, cols=1, shared_xaxes=True,
@@ -292,7 +301,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         row_heights=row_heights,
     )
 
-    rsi_row = macd_row = atr_row = adx_row = obv_row = next_row = 3
+    rsi_row = macd_row = atr_row = adx_row = obv_row = next_row = 2 if lean else 3
 
     if chart_type == "line":
         fig.add_trace(go.Scatter(
@@ -452,18 +461,19 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
             line=dict(color="#ff6f00", width=1.5, dash="dash"),
         ), row=1, col=1)
 
-    fig.add_trace(go.Scatter(
-        x=df["Idx"], y=(df["High"] + df["Low"]) / 2,
-        mode="markers", marker=dict(size=12, opacity=0),
-        showlegend=False, hoverinfo="none", name="_click_helper",
-        customdata=df[["High", "Low"]].values.tolist(),
-    ), row=1, col=1)
+    if not lean:
+        fig.add_trace(go.Scatter(
+            x=df["Idx"], y=(df["High"] + df["Low"]) / 2,
+            mode="markers", marker=dict(size=12, opacity=0),
+            showlegend=False, hoverinfo="none", name="_click_helper",
+            customdata=df[["High", "Low"]].values.tolist(),
+        ), row=1, col=1)
 
-    fig.add_trace(go.Bar(
-        x=df["Idx"], y=df["Volume"],
-        marker_color=hacim_renk, opacity=0.8,
-        name="Volume",
-    ), row=2, col=1)
+        fig.add_trace(go.Bar(
+            x=df["Idx"], y=df["Volume"],
+            marker_color=hacim_renk, opacity=0.8,
+            name="Volume",
+        ), row=2, col=1)
 
     if has_rsi:
         rsi_row = next_row
@@ -578,12 +588,13 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         ), row=obv_row, col=1)
 
     degisim_renk = "#26a69a" if degisim >= 0 else "#ef5350"
-    fig.add_hline(
-        y=kapanis, line_dash="dash", line_color=degisim_renk,
-        line_width=1, opacity=0.7, row=1, col=1,
-        annotation_text=f" {kapanis:.2f}",
-        annotation_font_color=degisim_renk,
-        annotation_font_size=10,
+    # Last close shown as a tag sitting among the y-axis price labels, rather
+    # than a line drawn across the chart.
+    fig.add_annotation(
+        x=0, y=kapanis, xref="paper", yref="y",
+        text=f"{kapanis:.2f}", showarrow=False, xanchor="right", xshift=-2,
+        font=dict(color="#05080d", size=10, family="monospace"),
+        bgcolor=degisim_renk, borderpad=3,
     )
 
     fark_isaret = "+" if fark_tl >= 0 else ""
@@ -595,7 +606,7 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
         font_color="#8a98ab",
         xaxis_rangeslider_visible=False,
         yaxis_title="Price (TL)",
-        yaxis2_title="Volume",
+        **({} if lean else {"yaxis2_title": "Volume"}),
         **({"yaxis" + str(rsi_row) + "_title": "RSI",
             "yaxis" + str(rsi_row): dict(range=[0, 100])} if has_rsi else {}),
         **({"yaxis" + str(macd_row) + "_title": "MACD"} if has_macd else {}),
@@ -651,21 +662,174 @@ def _build_figure(sembol, start, end, interval="5m", indicators=None, chart_type
 
     return fig, summary
 
-OVERLAY_MB_SCRIPT = """<script>
-(function waitMB(){
-  var gd = document.getElementById("grafik-overlay");
-  if(!gd){ setTimeout(waitMB, 200); return; }
-  var mb = gd.querySelector(".modebar");
-  if(!mb){ setTimeout(waitMB, 200); return; }
-  mb.style.transform = window.innerWidth <= 768 ? "scale(1.6)" : "scale(1.3)";
-  mb.style.transformOrigin = "top right";
-  gd.addEventListener("wheel", function(e){ e.preventDefault(); }, {passive: false});
+# The chart is drawn once over its full range and never redrawn while the user
+# navigates: wheel and drag only move a GPU transform over that finished picture.
+# Nothing re-renders, so zooming can't stutter and zooming back out reveals the
+# chart that was there all along. SVG is vector, so scaling stays sharp.
+FAST_ZOOM_SCRIPT = """<style>
+/* Horizontal scaling would otherwise squash or fatten every stroke. */
+.fz-live .overplot path, .fz-live .plot path, .fz-live .gridlayer path {
+  vector-effect: non-scaling-stroke;
+}
+.fz-live .nsewdrag { cursor: grab; }
+</style>
+<script>
+(function(){
+  function attach(id, tries){
+    tries = tries || 0;
+    var gd = document.getElementById(id);
+    var root = gd && gd.querySelector(".cartesianlayer");
+    if(!gd || !gd._fullLayout || !root){
+      if(tries < 60){ setTimeout(function(){ attach(id, tries + 1); }, 150); }
+      return;
+    }
+    var xa = gd._fullLayout.xaxis;
+    if(!xa || !xa._length){
+      if(tries < 60){ setTimeout(function(){ attach(id, tries + 1); }, 150); }
+      return;
+    }
+    var X0 = xa._offset, W = xa._length;
+
+    // Move the groups *inside* each clipped container, never the container
+    // itself: transforming a clipped element drags its clip along and the lines
+    // spill past the panel edge. Children stay clipped to the plot area.
+    var parts = [];
+    // Shapes (the S/R levels) can sit in a .shapelayer outside .cartesianlayer,
+    // so look for those across the whole graph div, not just under the root.
+    var clipped = [];
+    function addAll(list){ for(var i = 0; i < list.length; i++){ clipped.push(list[i]); } }
+    addAll(root.querySelectorAll(".overplot > g, .plot, .gridlayer, .zerolinelayer"));
+    addAll(gd.querySelectorAll(".shapelayer"));
+    for(var c = 0; c < clipped.length; c++){
+      var kids = clipped[c].children;
+      for(var j = 0; j < kids.length; j++){ parts.push(kids[j]); }
+    }
+    if(!parts.length){ parts = [root]; }
+
+    // Tick labels carry their own translate() and can be repositioned directly.
+    var ticks = [];
+    var texts = root.querySelectorAll(".xaxislayer-above text, .xaxislayer-below text");
+    for(var t = 0; t < texts.length; t++){
+      var tr = texts[t].getAttribute("transform") || "";
+      var mt = /translate\\(\\s*([-\\d.]+)[ ,]+([-\\d.]+)/.exec(tr);
+      if(mt){ ticks.push({el: texts[t], x: parseFloat(mt[1]), y: parseFloat(mt[2])}); }
+    }
+
+    // Annotations (the S/R price tags) keep their translate on a nested node, so
+    // anchor them by measured position instead and shift them with a CSS nudge.
+    // Only ones anchored to a data point move. Tags parked on the axis (the
+    // last-close price) or pinned to the paper edge stay where they are.
+    var tags = [];
+    var gdBox = gd.getBoundingClientRect();
+    var annos = gd.querySelectorAll(".infolayer .annotation");
+    for(var a = 0; a < annos.length; a++){
+      var b = annos[a].getBoundingClientRect();
+      var cxa = b.left + b.width / 2 - gdBox.left;
+      if(cxa > X0 + 25 && cxa < X0 + W){ tags.push({el: annos[a], x: cxa}); }
+    }
+
+    var s = 1, tx = 0;
+
+    function render(){
+      var css = "translateX(" + tx + "px) scaleX(" + s + ")";
+      for(var i = 0; i < parts.length; i++){
+        parts[i].style.transformOrigin = X0 + "px center";
+        parts[i].style.transform = css;
+      }
+      for(var q = 0; q < ticks.length; q++){
+        var tk = ticks[q];
+        var px = X0 + (tk.x - X0) * s + tx;
+        if(px < X0 - 1 || px > X0 + W + 1){ tk.el.style.display = "none"; continue; }
+        tk.el.style.display = "";
+        tk.el.setAttribute("transform", "translate(" + px + "," + tk.y + ")");
+      }
+      for(var n = 0; n < tags.length; n++){
+        var tg = tags[n];
+        var nx = X0 + (tg.x - X0) * s + tx;
+        if(nx < X0 - 1 || nx > X0 + W + 1){ tg.el.style.display = "none"; continue; }
+        tg.el.style.display = "";
+        tg.el.style.transform = "translateX(" + (nx - tg.x) + "px)";
+      }
+      gd.classList.toggle("fz-live", s !== 1);
+    }
+
+    function zoomAt(cursorX, factor){
+      var ns = Math.max(1, Math.min(400, s * factor));
+      // keep whatever sits under the cursor pinned in place
+      tx = cursorX - X0 - (cursorX - X0 - tx) * ns / s;
+      s = ns;
+      tx = Math.min(0, Math.max(W * (1 - s), tx));   // never expose empty space
+      render();
+    }
+
+    gd.addEventListener("wheel", function(e){
+      e.preventDefault();
+      e.stopPropagation();          // Plotly must never redraw for a zoom
+      var d = e.deltaY;
+      if(e.deltaMode === 1){ d *= 16; }          // some mice report lines, not px
+      // Scale by how far the wheel moved, not once per event: a trackpad fires
+      // ~100 small events/sec and a fixed step per event runs away instantly.
+      var f = Math.exp(-Math.max(-60, Math.min(60, d)) * 0.0035);
+      zoomAt(e.clientX - gd.getBoundingClientRect().left, f);
+    }, {passive: false, capture: true});
+
+    // Drag to pan across the zoomed picture — again pure transform, no redraw.
+    var dragging = false, lastX = 0;
+    gd.addEventListener("mousedown", function(e){
+      if(s === 1 || e.button !== 0){ return; }
+      dragging = true; lastX = e.clientX;
+      e.preventDefault(); e.stopPropagation();
+    }, {capture: true});
+    window.addEventListener("mousemove", function(e){
+      if(!dragging){ return; }
+      tx = Math.min(0, Math.max(W * (1 - s), tx + (e.clientX - lastX)));
+      lastX = e.clientX;
+      render();
+    });
+    window.addEventListener("mouseup", function(){ dragging = false; });
+
+    // Double-click returns to the full picture.
+    gd.addEventListener("dblclick", function(e){
+      if(s === 1){ return; }
+      e.preventDefault(); e.stopPropagation();
+      s = 1; tx = 0; render();
+    }, {capture: true});
+  }
+  // Overlay only. Transform-zoom never redraws, which is what keeps the
+  // many-trace overlay smooth, but it also means candle bodies would stretch
+  // horizontally instead of staying one bar wide. The main chart has few traces
+  // and was always fluid with Plotly's own zoom, so it keeps that.
+  attach("grafik-overlay");
 })();
 </script>"""
 
 
-def _fig_to_div(fig, div_id):
-    return fig.to_html(full_html=False, include_plotlyjs=False, config=PLOTLY_CONFIG, div_id=div_id)
+OVERLAY_MB_SCRIPT = """<script>
+(function(){
+  // Bind the wheel guard as soon as the chart div exists. It used to sit behind
+  // the modebar polling below, so if the modebar was late the guard never
+  // attached and wheeling scrolled the page instead of zooming the chart.
+  var tries = 0;
+  (function waitMB(){
+    var gd = document.getElementById("grafik-overlay");
+    var mb = gd && gd.querySelector(".modebar");
+    if(!mb){ if(++tries < 50){ setTimeout(waitMB, 200); } return; }
+    mb.style.transform = window.innerWidth <= 768 ? "scale(1.6)" : "scale(1.3)";
+    mb.style.transformOrigin = "top right";
+  })();
+})();
+</script>"""
+
+
+def _fig_to_div(fig, div_id, config=None):
+    return fig.to_html(full_html=False, include_plotlyjs=False,
+                       config=config or PLOTLY_CONFIG, div_id=div_id)
+
+
+# Side-by-side charts share one flex row, so a responsive resize on either one
+# re-renders both — and each re-render can nudge the width again. Pinning them
+# breaks that loop (cost: a window resize needs a reload to re-fit).
+SPLIT_CONFIG = {**PLOTLY_CONFIG, "responsive": False}
 
 
 def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None,
@@ -681,21 +845,52 @@ def grafik_ciz_html(sembol, start, end, interval="5m", indicators=None,
         if main is None:
             return None, None, None
         main_fig, summary = main
-        ov = _build_figure(sembol, start, end, interval, overlays, "line", df=df)
+        # Same chart type as the main one: the right-hand chart is then exactly
+        # the (smooth) single-view chart with the indicators on it, and the left
+        # is that same chart without them.
+        ov = _build_figure(sembol, start, end, interval, overlays, "line", df=df, lean=True)
         ov_fig = ov[0]
+        # Indicator overlays are smoothed curves, so plotting every Nth point is
+        # visually identical but cuts what Plotly has to redraw on each commit.
+        _MAX_PTS = 700
+        for _tr in ov_fig.data:
+            _x = getattr(_tr, "x", None)
+            if _x is None or len(_x) <= _MAX_PTS:
+                continue
+            _step = len(_x) // _MAX_PTS + 1
+            _tr.x = _x[::_step]
+            if getattr(_tr, "y", None) is not None:
+                _tr.y = _tr.y[::_step]
         # overlay is the right-hand chart, so put its y-axis numbers on the
         # right (outer) side instead of the seam between the two charts
+        # Opaque paper matching .chart-split's background: visually identical to
+        # a transparent paper, but the browser no longer has to blend both charts
+        # against the parent on every zoom repaint.
         ov_fig.update_layout(height=main_fig.layout.height,
                              title=f"{sembol}  |  Overlays",
-                             paper_bgcolor="rgba(0,0,0,0)",
+                             paper_bgcolor="#0c121b",
                              margin_l=12, margin_r=54,
                              legend=dict(x=0.005, y=0.99, xanchor="left", yanchor="top",
                                          bgcolor="rgba(12,18,27,0.6)", bordercolor="#1a2230"))
-        ov_fig.update_yaxes(side="right", title_text="")
-        # transparent paper on the main too, so neither shows a black margin band
-        main_fig.update_layout(paper_bgcolor="rgba(0,0,0,0)")
-        main_html = _fig_to_div(main_fig, "grafik-container") + FIB_SCRIPT_EMBED
-        overlay_html = _fig_to_div(ov_fig, "grafik-overlay") + OVERLAY_MB_SCRIPT
+        ov_fig.update_yaxes(side="right", title_text="", showspikes=False)
+        # this chart's price axis sits on the right, so the last-close tag moves
+        # over with it
+        for _an in ov_fig.layout.annotations:
+            if _an.xref == "paper" and _an.x == 0 and _an.xanchor == "right":
+                _an.update(x=1, xanchor="left", xshift=2)
+        ov_fig.update_xaxes(showspikes=False)
+        # Hover work scales with trace count, and the wheel sits right on top of
+        # the chart while zooming: 11 traces here vs 3 on the main. This chart is
+        # for visual comparison — the main one carries the readout — so drop all
+        # per-mousemove work instead of paying it on every zoom event.
+        ov_fig.update_layout(hovermode=False)
+        for _tr in ov_fig.data:
+            _tr.hoverinfo = "skip"
+        # same opaque panel colour on the main, so neither shows a black margin band
+        main_fig.update_layout(paper_bgcolor="#0c121b")
+        main_html = _fig_to_div(main_fig, "grafik-container", SPLIT_CONFIG) + FIB_SCRIPT_EMBED
+        overlay_html = (_fig_to_div(ov_fig, "grafik-overlay", SPLIT_CONFIG)
+                        + OVERLAY_MB_SCRIPT + FAST_ZOOM_SCRIPT)
         return main_html, summary, overlay_html
 
     result = _build_figure(sembol, start, end, interval, indicators or None, chart_type)

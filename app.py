@@ -1,13 +1,17 @@
 from flask import Flask, render_template, request, make_response, g
 from bist import bist_sirketler, bist_detay_veri, bist_ticker_veri, bist_top_movers, bist_xu100, bist_fundamentals
 from viop import viop_ozet_veri, viop_detay_veri, kontrat_tarih_araligi
-from graphicgenerator import grafik_ciz_html
+from graphicgenerator import grafik_ciz_html, _fetch_history
+from indicators import chart_payload
 from rates import get_rates
 from translations import TRANSLATIONS
 from concurrent.futures import ThreadPoolExecutor
 import logging
 
 logging.basicConfig(level=logging.INFO)
+# borsapy's websocket layer logs every connect/close at INFO, which floods the
+# logs and buries our own warnings. Keep its errors, drop the chatter.
+logging.getLogger("websocket").setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
@@ -110,6 +114,24 @@ def bist_detay(sembol):
                            active_indicators=indicators,
                            chart_type=chart_type,
                            overlay_mode=overlay_mode)
+
+
+@app.route("/api/chart/<sembol>")
+def api_chart(sembol):
+    """OHLC plus the selected indicator series, for the browser-side charts."""
+    start = request.args.get("start")
+    end = request.args.get("end", start)
+    interval = request.args.get("interval", "5m")
+    if not start:
+        return {"error": "missing range"}, 400
+    try:
+        df = _fetch_history(sembol.upper(), start, end, interval)
+        if df is None or df.empty:
+            return {"error": g.t["data_unavailable"]}, 200
+        return chart_payload(df, request.args.getlist("ind"))
+    except Exception as e:
+        app.logger.warning("Chart data failed for %s: %s", sembol, e)
+        return {"error": g.t["data_unavailable"]}, 200
 
 
 @app.route("/api/fundamentals/<sembol>")

@@ -210,12 +210,16 @@
         .chart-container .js-plotly-plot { margin-left: 0 !important; }
         /* break out of the page container to use (most of) the monitor width,
            symmetrically centered so nothing gets clipped */
+        /* No blurred box-shadow here: this element is ~96vw wide, and re-blurring
+           that area on every repaint made zooming janky across the whole page. */
         .chart-split { display: flex; gap: 20px; align-items: flex-start;
             width: 96vw; position: relative; left: 50%; transform: translateX(-50%);
-            background: #0c121b; border: 1px solid #1a2230; padding: 16px;
-            box-shadow: 0 4px 16px rgba(0,0,0,.45); }
-        .chart-split > .chart-container { flex: 1 1 0; min-width: 0; margin-top: 0;
-            border: 1px solid #1a2230; }
+            background: #0c121b; border: 1px solid #1a2230; padding: 16px; }
+        /* Fixed 50% basis and no auto scrollbar: with flex:1 1 0 + overflow-x:auto
+           a redraw could nudge the width, toggle a scrollbar and resize both
+           charts, which fed back into another redraw and stalled the page. */
+        .chart-split > .chart-container { flex: 0 0 calc(50% - 10px); min-width: 0;
+            margin-top: 0; overflow: hidden; border: 1px solid #1a2230; }
         @media (max-width: 900px) { .chart-split { flex-direction: column; width: 100%; left: 0; transform: none; } }
 
         .card-toggle {
