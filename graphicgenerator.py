@@ -215,13 +215,34 @@ SMA_EMA_COLORS = {
 }
 
 
+_hist_cache = {}
+HIST_TTL = 120
+MAX_HIST_ENTRIES = 12
+
+
 def _fetch_history(sembol, start, end, interval, attempts=3):
     """Fetch OHLC data, retrying transient upstream failures (the data provider
-    drops the websocket under load, which otherwise surfaces as a raw error)."""
+    drops the websocket under load, which otherwise surfaces as a raw error).
+
+    Cached briefly: a chart page needs the same bars twice — once server-side
+    for the summary and once from the browser for /api/chart.
+    """
+    key = (sembol, start, end, interval)
+    now = time.time()
+    hit = _hist_cache.get(key)
+    if hit is not None and now - hit["time"] < HIST_TTL:
+        return hit["df"]
+
     last_err = None
     for i in range(attempts):
         try:
-            return guarded(lambda: bp.Ticker(sembol).history(start=start, end=end, interval=interval))
+            df = guarded(lambda: bp.Ticker(sembol).history(start=start, end=end, interval=interval))
+            for k in [k for k, v in _hist_cache.items() if now - v["time"] >= HIST_TTL]:
+                _hist_cache.pop(k, None)
+            while len(_hist_cache) >= MAX_HIST_ENTRIES:
+                _hist_cache.pop(min(_hist_cache, key=lambda k: _hist_cache[k]["time"]), None)
+            _hist_cache[key] = {"df": df, "time": now}
+            return df
         except Exception as e:
             last_err = e
             # a bad ticker will never succeed, so don't burn retries on it

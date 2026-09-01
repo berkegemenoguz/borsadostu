@@ -252,6 +252,39 @@ def panels(df, selected):
     return out
 
 
+def _fmt_volume(v):
+    if v >= 1_000_000_000:
+        return f"{v / 1_000_000_000:.1f}B"
+    if v >= 1_000_000:
+        return f"{v / 1_000_000:.1f}M"
+    if v >= 1_000:
+        return f"{v / 1_000:.1f}K"
+    return str(int(v))
+
+
+def summary(df, interval="5m"):
+    """The figures shown in the chart-summary card, without building a figure."""
+    acilis = float(df["Open"].iloc[0])
+    kapanis = float(df["Close"].iloc[-1])
+    en_yuksek = float(df["High"].max())
+    en_dusuk = float(df["Low"].min())
+    stamp = "%d.%m" if interval == "1d" else "%H:%M"
+    fark = kapanis - acilis
+    degisim = (kapanis - acilis) / acilis * 100 if acilis else 0.0
+    return {
+        "open": f"{acilis:.2f}",
+        "close": f"{kapanis:.2f}",
+        "high": f"{en_yuksek:.2f}",
+        "high_time": df["High"].idxmax().strftime(stamp),
+        "low": f"{en_dusuk:.2f}",
+        "low_time": df["Low"].idxmin().strftime(stamp),
+        "change_tl": f"{'+' if fark >= 0 else '-'}{abs(fark):.2f}",
+        "change_pct": f"{degisim:+.2f}",
+        "volume": _fmt_volume(float(df["Volume"].sum())),
+        "pos": degisim >= 0,
+    }
+
+
 def chart_payload(df, selected=None):
     """Everything the browser needs to draw the three charts."""
     selected = selected or []

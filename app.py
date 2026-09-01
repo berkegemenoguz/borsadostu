@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, make_response, g
+from flask import Flask, render_template, request, make_response, g, url_for
 from bist import bist_sirketler, bist_detay_veri, bist_ticker_veri, bist_top_movers, bist_xu100, bist_fundamentals
 from viop import viop_ozet_veri, viop_detay_veri, kontrat_tarih_araligi
 from graphicgenerator import grafik_ciz_html, _fetch_history
-from indicators import chart_payload
+from indicators import chart_payload, summary
 from rates import get_rates
 from translations import TRANSLATIONS
 from concurrent.futures import ThreadPoolExecutor
@@ -82,14 +82,26 @@ def bist_detay(sembol):
     chart_type = request.args.get("chart_type", "candlestick")
     overlay_mode = request.args.get("overlay_mode", "on")
     start = request.args.get("start")
+    # Split view is drawn in the browser on canvas: it stays fluid while zooming
+    # where the SVG version could not, and the panels get their own chart.
+    canvas = overlay_mode == "separate"
     if start:
         end = request.args.get("end", start)
         interval = request.args.get("interval", "5m")
         try:
-            chart_html, chart_summary, overlay_html = grafik_ciz_html(sembol, start, end, interval, indicators or None, chart_type, overlay_mode)
+            if canvas:
+                df = _fetch_history(sembol, start, end, interval)
+                if df is None or df.empty:
+                    raise ValueError("no data")
+                chart_summary = summary(df, interval)
+                chart_html = True          # tells the template to place the canvases
+            else:
+                chart_html, chart_summary, overlay_html = grafik_ciz_html(
+                    sembol, start, end, interval, indicators or None, chart_type, overlay_mode)
         except Exception as e:
             app.logger.warning("Chart failed for %s: %s", sembol, e)
             veri["hata"] = g.t["data_unavailable"]
+            chart_html = None
 
     history_rows = []
     if not veri["history"].empty:
@@ -113,7 +125,8 @@ def bist_detay(sembol):
                            interval=request.args.get("interval", "5m"),
                            active_indicators=indicators,
                            chart_type=chart_type,
-                           overlay_mode=overlay_mode)
+                           overlay_mode=overlay_mode,
+                           canvas=canvas)
 
 
 @app.route("/api/chart/<sembol>")
@@ -163,16 +176,31 @@ def viop_detay(base):
     chart_type = request.args.get("chart_type", "candlestick")
     overlay_mode = request.args.get("overlay_mode", "on")
     sembol_param = request.args.get("sembol")
+    canvas = overlay_mode == "separate"
+    chart_url = None
     if sembol_param:
         kod = veri["kodlar"].get(sembol_param, "")
         start, end = kontrat_tarih_araligi(kod)
         interval = request.args.get("interval", "1h")
         if start and end:
             try:
-                chart_html, chart_summary, overlay_html = grafik_ciz_html(sembol_param, start, end, interval, indicators or None, chart_type, overlay_mode)
+                if canvas:
+                    df = _fetch_history(sembol_param, start, end, interval)
+                    if df is None or df.empty:
+                        raise ValueError("no data")
+                    chart_summary = summary(df, interval)
+                    chart_html = True
+                    # the contract's range is derived here, so hand the browser
+                    # a ready-made URL rather than re-deriving it client-side
+                    chart_url = url_for("api_chart", sembol=sembol_param, start=start,
+                                        end=end, interval=interval, ind=indicators)
+                else:
+                    chart_html, chart_summary, overlay_html = grafik_ciz_html(
+                        sembol_param, start, end, interval, indicators or None, chart_type, overlay_mode)
             except Exception as e:
                 app.logger.warning("Chart failed for %s: %s", sembol_param, e)
                 veri["hata"] = g.t["data_unavailable"]
+                chart_html = None
 
     kontrat_rows = []
     for _, row in veri["kontratlar"].iterrows():
@@ -192,7 +220,8 @@ def viop_detay(base):
                            interval=request.args.get("interval", "1h"),
                            chart_type=chart_type,
                            overlay_mode=overlay_mode,
-                           active_indicators=indicators)
+                           active_indicators=indicators,
+                           canvas=canvas, chart_url=chart_url)
 
 
 if __name__ == "__main__":

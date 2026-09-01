@@ -220,7 +220,16 @@
            charts, which fed back into another redraw and stalled the page. */
         .chart-split > .chart-container { flex: 0 0 calc(50% - 10px); min-width: 0;
             margin-top: 0; overflow: hidden; border: 1px solid #1a2230; }
-        @media (max-width: 900px) { .chart-split { flex-direction: column; width: 100%; left: 0; transform: none; } }
+        /* Oscillator panes get their own chart under the pair, spanning the same
+           width so its time axis lines up with both charts above. */
+        .chart-panels { width: 96vw; position: relative; left: 50%; transform: translateX(-50%);
+            background: #0c121b; border: 1px solid #1a2230; border-top: 0;
+            padding: 0 16px 16px; }
+        .chart-panels:empty, .chart-panels > div:empty { display: none; }
+        @media (max-width: 900px) {
+            .chart-split { flex-direction: column; width: 100%; left: 0; transform: none; }
+            .chart-panels { width: 100%; left: 0; transform: none; }
+        }
 
         .card-toggle {
             display: flex;
