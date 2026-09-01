@@ -1,5 +1,6 @@
 import borsapy as bp
 import pandas as pd
+import logging
 import time
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor
@@ -17,6 +18,7 @@ TOP_MOVERS_SYMBOLS = [
 _ticker_cache = {"data": [], "time": 0}
 _movers_cache = {"data": [], "time": 0}
 CACHE_TTL = 300
+_log = logging.getLogger(__name__)
 _detay_cache = {}
 _mcap_cache = {}
 # Each detail entry holds a history DataFrame, so an unbounded dict grows until
@@ -180,7 +182,8 @@ def bist_detay_veri(sembol):
     result = {"info": None, "fast_info": None, "history": pd.DataFrame(), "hata": None}
     try:
         ticker = bp.Ticker(sembol)
-    except Exception:
+    except Exception as e:
+        _log.warning("Ticker(%s) failed: %s: %s", sembol, type(e).__name__, e)
         result["hata"] = f"'{sembol}' için veri alınamadı."
         return result
 
@@ -188,7 +191,10 @@ def bist_detay_veri(sembol):
         info = ticker.info
         info.get("last")  # force the lazy load; raises here if the ticker has no data
         result["info"] = info
-    except Exception:
+    except Exception as e:
+        # Log the real upstream error — swallowing it silently made live
+        # failures impossible to diagnose (they all looked like "no data").
+        _log.warning("quote(%s) failed: %s: %s", sembol, type(e).__name__, e)
         result["info"] = None
         result["hata"] = f"'{sembol}' için veri alınamadı."
         return result

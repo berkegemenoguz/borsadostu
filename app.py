@@ -5,6 +5,9 @@ from graphicgenerator import grafik_ciz_html
 from rates import get_rates
 from translations import TRANSLATIONS
 from concurrent.futures import ThreadPoolExecutor
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
