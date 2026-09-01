@@ -225,7 +225,12 @@
         .chart-panels { width: 96vw; position: relative; left: 50%; transform: translateX(-50%);
             background: #0c121b; border: 1px solid #1a2230; border-top: 0;
             padding: 0 16px 16px; }
-        .chart-panels:empty, .chart-panels > div:empty { display: none; }
+        /* Together view isn't full-bleed, so its panel strip stays in the column. */
+        .chart-panels-full { width: 100%; left: 0; transform: none;
+            border: 1px solid #1a2230; border-top: 0; padding: 0; }
+        /* Hidden from JS when there are no panes — a CSS :empty rule would hide
+           the box before the chart is built, and it would measure zero width. */
+        .chart-panels.is-empty { display: none; }
         @media (max-width: 900px) {
             .chart-split { flex-direction: column; width: 100%; left: 0; transform: none; }
             .chart-panels { width: 100%; left: 0; transform: none; }

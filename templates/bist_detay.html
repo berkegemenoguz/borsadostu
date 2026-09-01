@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ sembol }} — Borsa Dostu{% endblock %}
-{# Split view draws on canvas and has no use for Plotly's 4.5 MB bundle. #}
-{% block head_js %}{% if not canvas %}<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>{% endif %}{% endblock %}
+{# Charts are drawn on canvas by static/charts.js — no Plotly. #}
 {% block content %}
 <h1>{{ sembol }} <a href="/bist" style="font-size:14px; font-weight:400;">← {{ t.back_to_list }}</a></h1>
 
@@ -158,12 +157,15 @@
     </form>
 
     {% if chart_html %}
-        {% if canvas %}
+        {% if split %}
         <div class="chart-split">
             <div class="chart-container"><div id="lw-main"></div></div>
             <div class="chart-container"><div id="lw-overlay"></div></div>
         </div>
-        <div class="chart-panels"><div id="lw-panels"></div></div>
+        {% else %}
+        <div class="chart-container"><div id="lw-main"></div></div>
+        {% endif %}
+        <div class="chart-panels{% if not split %} chart-panels-full{% endif %}"><div id="lw-panels"></div></div>
         <script src="/static/lightweight-charts.js"></script>
         <script src="/static/charts.js"></script>
         <script>
@@ -171,18 +173,14 @@
             // tojson, not string interpolation: the query string would otherwise
             // arrive with HTML-escaped ampersands and break the request
             url: {{ ("/api/chart/" ~ sembol ~ "?" ~ request.query_string.decode()) | tojson }},
-            main: "lw-main", overlay: "lw-overlay", panels: "lw-panels",
-            type: {{ chart_type | tojson }}, split: true, mainHeight: 460
+            main: "lw-main",
+            {% if split %}overlay: "lw-overlay",{% endif %}
+            panels: "lw-panels",
+            type: {{ chart_type | tojson }},
+            split: {{ 'true' if split else 'false' }},
+            mainHeight: {{ 460 if split else 520 }}
         }).catch(function(e){ console.error("chart:", e); });
         </script>
-        {% elif overlay_html %}
-        <div class="chart-split">
-            <div class="chart-container">{{ chart_html | safe }}</div>
-            <div class="chart-container">{{ overlay_html | safe }}</div>
-        </div>
-        {% else %}
-        <div class="chart-container">{{ chart_html | safe }}</div>
-        {% endif %}
     {% endif %}
 </div>
 

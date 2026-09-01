@@ -14,9 +14,12 @@
         down: "#ef5350",
     };
 
-    function baseOptions(height) {
+    function baseOptions(height, el) {
         return {
             height: height,
+            // Width comes from the container explicitly: relying on the default
+            // measurement bit us when a wrapper was still hidden at build time.
+            width: (el && el.clientWidth) || undefined,
             layout: {
                 background: { color: THEME.bg },
                 textColor: THEME.text,
@@ -94,7 +97,7 @@
     /* Price chart: candles (or a line/area) with volume tucked underneath. */
     function buildPrice(el, data, opts) {
         opts = opts || {};
-        var chart = LWC.createChart(el, baseOptions(opts.height || 460));
+        var chart = LWC.createChart(el, baseOptions(opts.height || 460, el));
         var times = data.times;
         var main;
 
@@ -145,7 +148,7 @@
         var panels = data.panels || [];
         if (!panels.length) return null;
 
-        var chart = LWC.createChart(el, baseOptions(Math.max(150, panels.length * 150)));
+        var chart = LWC.createChart(el, baseOptions(Math.max(150, panels.length * 150), el));
         var times = data.times;
 
         panels.forEach(function (p, i) {
@@ -227,7 +230,14 @@
                         }));
                     }
                     if (cfg.panels) {
-                        made.push(buildPanels(document.getElementById(cfg.panels), data));
+                        var host = document.getElementById(cfg.panels);
+                        var built = buildPanels(host, data);
+                        made.push(built);
+                        // collapse the strip only after building, so the chart
+                        // is never measured inside a hidden box
+                        if (!built && host && host.parentElement) {
+                            host.parentElement.classList.add("is-empty");
+                        }
                     }
                     sync(made);
                     window.addEventListener("resize", function () {
