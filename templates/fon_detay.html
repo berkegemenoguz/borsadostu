@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}{{ kod }} — Borsa Dostu{% endblock %}
+{% block content %}
+<h1>{{ kod }} <a href="/fon" style="font-size:14px; font-weight:400;">← {{ t.back_to_list }}</a></h1>
+
+{% if veri.hata %}
+<div class="error">{{ veri.hata }}</div>
+{% endif %}
+
+{% if veri.info %}
+{% set i = veri.info %}
+<div style="color:#8a98ab;font-size:14px;margin:-8px 0 18px;max-width:70ch;">{{ i.get('name','') }}</div>
+
+<div class="info-grid">
+    <div class="info-item">
+        <div class="label">{{ t.price }}</div>
+        <div class="value">{{ "%.6f"|format(i.get('price', 0)) }} TL</div>
+    </div>
+    {% set dr = i.get('daily_return') %}
+    <div class="info-item">
+        <div class="label">{{ t.change }}</div>
+        <div class="value {{ 'green' if dr and dr >= 0 else 'red' }}">
+            {{ "▲" if dr and dr >= 0 else "▼" }}{{ "%.2f"|format(dr|abs) if dr is not none else '—' }}%
+        </div>
+    </div>
+    <div class="info-item">
+        <div class="label">{{ t.fund_size }}</div>
+        <div class="value mono">{{ "{:,.0f}".format(i.get('fund_size', 0)) }} TL</div>
+    </div>
+    <div class="info-item">
+        <div class="label">{{ t.investors }}</div>
+        <div class="value mono">{{ "{:,.0f}".format(i.get('investor_count', 0)) }}</div>
+    </div>
+    <div class="info-item">
+        <div class="label">{{ t.fund_kind }}</div>
+        <div class="value" style="font-size:14px;">{{ i.get('category') or '—' }}</div>
+    </div>
+    <div class="info-item">
+        <div class="label">{{ t.risk_value }}</div>
+        <div class="value mono">{{ i.get('risk_value') or '—' }} <span style="color:#5a6779;font-size:12px;">/ 7</span></div>
+    </div>
+    {% if i.get('category_rank') %}
+    <div class="info-item">
+        <div class="label">{{ t.category_rank }}</div>
+        <div class="value mono">{{ i.get('category_rank') }} <span style="color:#5a6779;font-size:12px;">/ {{ i.get('category_fund_count') }}</span></div>
+    </div>
+    {% endif %}
+    {% if veri.fee and veri.fee.get('applied_fee') is not none %}
+    <div class="info-item">
+        <div class="label">{{ t.mgmt_fee }}</div>
+        <div class="value mono">{{ "%.2f"|format(veri.fee.get('applied_fee')) }}%</div>
+    </div>
+    {% endif %}
+</div>
+
+{% if veri.performance %}
+{% set p = veri.performance %}
+<div class="card">
+    <h2>{{ t.returns }}</h2>
+    <div class="info-grid">
+        {% for key, label in [('return_1m','1'~t.month_short), ('return_3m','3'~t.month_short), ('return_6m','6'~t.month_short), ('return_ytd',t.ytd_short), ('return_1y','1'~t.year_short), ('return_3y','3'~t.year_short), ('return_5y','5'~t.year_short)] %}
+        {% set v = p.get(key) %}
+        <div class="info-item">
+            <div class="label">{{ label }}</div>
+            <div class="value mono {{ 'green' if v and v >= 0 else ('red' if v else '') }}">{{ "%+.2f"|format(v) ~ '%' if v is not none else '—' }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if veri.risk %}
+{% set rk = veri.risk %}
+<div class="card">
+    <h2>{{ t.risk_metrics }}</h2>
+    <div class="info-grid">
+        {% for key, label in [('annualized_return',t.ann_return), ('annualized_volatility',t.volatility), ('sharpe_ratio','Sharpe'), ('sortino_ratio','Sortino'), ('max_drawdown',t.max_drawdown)] %}
+        {% set v = rk.get(key) %}
+        <div class="info-item">
+            <div class="label">{{ label }}</div>
+            <div class="value mono">{{ "%.2f"|format(v|float) if v is not none else '—' }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>{{ t.chart }}</h2>
+    <form method="get" action="/fon/{{ kod }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label>{{ t.start_date }}</label>
+                <input type="date" name="start" value="{{ start }}">
+            </div>
+            <div class="form-group">
+                <label>{{ t.range }}</label>
+                <div class="range-btns">
+                    <button type="button" class="rb" onclick="setStart(1)">1{{ t.month_short }}</button>
+                    <button type="button" class="rb" onclick="setStart(6)">6{{ t.month_short }}</button>
+                    <button type="button" class="rb" onclick="setStart(12)">1{{ t.year_short }}</button>
+                    <button type="button" class="rb" onclick="setStart(60)">5{{ t.year_short }}</button>
+                </div>
+            </div>
+            <button type="submit" class="btn">{{ t.generate }}</button>
+        </div>
+        <div class="ind-toggle" onclick="var b=document.getElementById('ind-body');var a=document.getElementById('ind-arrow');var o=b.style.display==='none';b.style.display=o?'block':'none';a.textContent=o?'▼':'▶';">
+            <span id="ind-arrow" style="color:#999;font-size:13px;">{{ '▼' if active_indicators else '▶' }}</span>
+            <span style="font-size:15px;font-weight:700;color:#eef2f7;font-family:'Cabinet Grotesk',sans-serif;">{{ t.indicators }}</span>
+            {% if active_indicators %}
+            <span style="font-size:12px;color:#999;margin-left:4px;">{{ active_indicators|join(', ') }}</span>
+            {% endif %}
+        </div>
+        <div id="ind-body" style="display:{{ 'block' if active_indicators else 'none' }};background:#0e1520;border:1px solid #1a2230;padding:14px;">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+                <div>
+                    <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Overlay</div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        {% for key, label in [("sma20","SMA 20"),("sma50","SMA 50"),("sma200","SMA 200"),("ema20","EMA 20"),("ema50","EMA 50"),("bb","Bollinger")] %}
+                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#cfd6e0;cursor:pointer;">
+                            <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Panel</div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        {% for key, label in [("rsi","RSI 14"),("macd","MACD")] %}
+                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#cfd6e0;cursor:pointer;">
+                            <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {# funds publish one daily price, so anything needing highs, lows
+                       or volume (Supertrend, S/R, VWAP, ATR, ADX, OBV) can't apply #}
+                    <div style="font-size:11px;color:#5a6779;margin-top:8px;">{{ t.fund_ind_note }}</div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="chart-container"><div id="lw-fund"></div></div>
+    <div class="chart-panels chart-panels-full"><div id="lw-fund-panels"></div></div>
+    <script src="{{ static_v('lightweight-charts.js') }}"></script>
+    <script src="{{ static_v('charts.js') }}"></script>
+    <script>
+    function setStart(months){
+        var d = new Date();
+        d.setMonth(d.getMonth() - months);
+        document.querySelector("input[name=start]").value =
+            d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    }
+    BDCharts.buildFund({
+        url: {{ ("/api/fon/" ~ kod ~ "?" ~ request.query_string.decode()) | tojson }},
+        el: "lw-fund", panels: "lw-fund-panels", height: 420
+    }).catch(function(e){ console.error("fund chart:", e); });
+    </script>
+</div>
+{% endif %}
+{% endblock %}
