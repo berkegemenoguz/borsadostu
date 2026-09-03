@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}{{ t.funds_title }} — Borsa Dostu{% endblock %}
+{% block content %}
+<style>.hl{color:#54d6ff;font-weight:700;}</style>
+<h1>{{ t.funds_title }} <span style="color:#5a6779; font-size:16px; font-weight:400;">{{ count }} {{ t.funds }}</span></h1>
+
+<div class="tick-toolbar">
+    <div class="search-wrap">
+        <input type="text" class="tick-search" id="search" placeholder="{{ t.fund_search }}" oninput="applyView()" autocomplete="off">
+        <button class="filter-btn" id="fbtn" onclick="togglePop(event)" aria-label="Filtrele">
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 4.5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="filter-pop" id="pop">
+            <div class="pop-h">{{ t.sort_filter }}</div>
+            <button class="pop-opt on" onclick="setSort('az',this)">A → Z</button>
+            <button class="pop-opt" onclick="setSort('r1y',this)">{{ t.best_1y }}</button>
+            <button class="pop-opt" onclick="setSort('rytd',this)">{{ t.best_ytd }}</button>
+            <button class="pop-opt" onclick="setSort('r1m',this)">{{ t.best_1m }}</button>
+            <button class="pop-opt" onclick="setSort('worst',this)">{{ t.worst_1y }}</button>
+            <button class="pop-opt" onclick="setSort('type',this)">{{ t.by_type }}</button>
+        </div>
+    </div>
+    <div class="fund-tabs">
+        {% for key, label in fund_types.items() %}
+        <a class="ft{{ ' on' if tur == key }}" href="/fon?tur={{ key }}">{{ label }}</a>
+        {% endfor %}
+    </div>
+    <span class="tick-count"><b id="count">{{ count }}</b> / {{ count }}</span>
+</div>
+
+<div style="overflow-x:auto;">
+    <table id="fund-table">
+        <thead>
+            <tr>
+                <th style="width:50px;">#</th>
+                <th style="width:80px;">{{ t.fund_code }}</th>
+                <th>{{ t.fund_name }}</th>
+                <th style="width:150px;">{{ t.fund_kind }}</th>
+                <th class="text-right" style="width:80px;">1{{ t.month_short }}</th>
+                <th class="text-right" style="width:80px;">{{ t.ytd_short }}</th>
+                <th class="text-right" style="width:80px;">1{{ t.year_short }}</th>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+            {% for f in fonlar %}
+            <tr data-c="{{ f.code }}" data-t="{{ f.type }}"
+                data-r1m="{{ f.r1m if f.r1m is not none else '' }}"
+                data-rytd="{{ f.rytd if f.rytd is not none else '' }}"
+                data-r1y="{{ f.r1y if f.r1y is not none else '' }}">
+                <td class="text-center mono"></td>
+                <td><a href="/fon/{{ f.code }}" class="mono">{{ f.code }}</a></td>
+                <td>{{ f.name }}</td>
+                <td class="mono" style="color:#8a98ab;font-size:12px;">{{ f.type or '—' }}</td>
+                <td class="text-right mono {{ 'green' if f.r1m and f.r1m > 0 else ('red' if f.r1m and f.r1m < 0 else '') }}">{{ '%.2f'|format(f.r1m) if f.r1m is not none else '—' }}</td>
+                <td class="text-right mono {{ 'green' if f.rytd and f.rytd > 0 else ('red' if f.rytd and f.rytd < 0 else '') }}">{{ '%.2f'|format(f.rytd) if f.rytd is not none else '—' }}</td>
+                <td class="text-right mono {{ 'green' if f.r1y and f.r1y > 0 else ('red' if f.r1y and f.r1y < 0 else '') }}">{{ '%.2f'|format(f.r1y) if f.r1y is not none else '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="{{ static_v('search.js') }}"></script>
+<script>
+var sortMode = "az", topHref = null;
+var tbody = document.getElementById("tbody");
+var CACHE = Array.prototype.slice.call(tbody.querySelectorAll("tr")).map(function(r){
+    var code = r.dataset.c, name = r.cells[2].textContent;
+    var num = function(v){ return v === "" ? null : parseFloat(v); };
+    return {
+        row: r, cOrig: code, nOrig: name, tOrig: r.dataset.t,
+        cNorm: BD.norm(code), nNorm: BD.norm(name), tNorm: BD.norm(r.dataset.t),
+        r1m: num(r.dataset.r1m), rytd: num(r.dataset.rytd), r1y: num(r.dataset.r1y)
+    };
+});
+
+function scoreRow(c, q){
+    if(c.cNorm === q) return 1000;                            // exact code
+    if(c.cNorm.indexOf(q) === 0) return 900;                  // code prefix
+    if((" " + c.nNorm).indexOf(" " + q) > -1) return 800;     // name word start
+    if(c.nNorm.indexOf(q) > -1) return 500;                   // name contains
+    if(c.tNorm.indexOf(q) > -1) return 300;                   // fund kind
+    if(BD.subseq(q, c.cNorm)) return 200;                     // fuzzy code
+    if(BD.subseq(q, c.nNorm)) return 150;                     // fuzzy name
+    return -1;
+}
+
+function togglePop(e){
+    e.stopPropagation();
+    document.getElementById("pop").classList.toggle("open");
+    document.getElementById("fbtn").classList.toggle("open");
+}
+document.addEventListener("click", function(){
+    document.getElementById("pop").classList.remove("open");
+    document.getElementById("fbtn").classList.remove("open");
+});
+document.getElementById("pop").addEventListener("click", function(e){ e.stopPropagation(); });
+
+function setSort(mode, el){
+    sortMode = mode;
+    document.querySelectorAll(".pop-opt").forEach(function(o){ o.classList.remove("on"); });
+    el.classList.add("on");
+    document.getElementById("pop").classList.remove("open");
+    document.getElementById("fbtn").classList.remove("open");
+    applyView();
+}
+
+document.getElementById("search").addEventListener("keydown", function(e){
+    if(e.key === "Enter" && topHref){ window.location = topHref; }
+});
+
+// funds without a figure for the sorted period sink to the bottom rather than
+// pretending to be the worst performer
+function byNum(field, desc){
+    return function(a, b){
+        var x = a[field], y = b[field];
+        if(x === null && y === null) return a.cOrig.localeCompare(b.cOrig);
+        if(x === null) return 1;
+        if(y === null) return -1;
+        return desc ? y - x : x - y;
+    };
+}
+
+function applyView(){
+    var q = BD.norm(document.getElementById("search").value);
+    var vis = [];
+    CACHE.forEach(function(c){
+        if(q){ c._s = scoreRow(c, q); if(c._s >= 0) vis.push(c); }
+        else { c._s = 0; vis.push(c); }
+    });
+
+    if(q){ vis.sort(function(a, b){ return b._s !== a._s ? b._s - a._s : a.cOrig.localeCompare(b.cOrig); }); }
+    else if(sortMode === "r1y")   vis.sort(byNum("r1y", true));
+    else if(sortMode === "rytd")  vis.sort(byNum("rytd", true));
+    else if(sortMode === "r1m")   vis.sort(byNum("r1m", true));
+    else if(sortMode === "worst") vis.sort(byNum("r1y", false));
+    else if(sortMode === "type")  vis.sort(function(a, b){
+        var t = a.tNorm.localeCompare(b.tNorm);
+        return t !== 0 ? t : a.cOrig.localeCompare(b.cOrig);
+    });
+    else vis.sort(function(a, b){ return a.cOrig.localeCompare(b.cOrig); });
+
+    CACHE.forEach(function(c){ c.row.style.display = "none"; });
+    vis.forEach(function(c, i){
+        var r = c.row;
+        r.style.display = "";
+        r.cells[0].textContent = i + 1;
+        r.cells[1].querySelector("a").innerHTML = BD.hl(c.cOrig, c.cNorm, q);
+        r.cells[2].innerHTML = BD.hl(c.nOrig, c.nNorm, q);
+        tbody.appendChild(r);
+    });
+    document.getElementById("count").textContent = vis.length;
+    topHref = vis.length ? vis[0].row.cells[1].querySelector("a").getAttribute("href") : null;
+}
+applyView();
+</script>
+{% endblock %}
