@@ -104,43 +104,8 @@
             </div>
             <button type="submit" class="btn">{{ t.generate }}</button>
         </div>
-        <div class="ind-toggle" onclick="var b=document.getElementById('ind-body');var a=document.getElementById('ind-arrow');var o=b.style.display==='none';b.style.display=o?'block':'none';a.textContent=o?'▼':'▶';">
-            <span id="ind-arrow" style="color:#999;font-size:13px;">{{ '▼' if active_indicators else '▶' }}</span>
-            <span style="font-size:15px;font-weight:700;color:#eef2f7;font-family:'Cabinet Grotesk',sans-serif;">{{ t.indicators }}</span>
-            {% if active_indicators %}
-            <span style="font-size:12px;color:#999;margin-left:4px;">{{ active_indicators|join(', ') }}</span>
-            {% endif %}
-        </div>
-        <div id="ind-body" style="display:{{ 'block' if active_indicators else 'none' }};background:#0e1520;border:1px solid #1a2230;padding:14px;">
-            <div style="display:flex;flex-direction:column;gap:14px;">
-                <div>
-                    <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Overlay</div>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        {% for key, label in [("sma20","SMA 20"),("sma50","SMA 50"),("sma200","SMA 200"),("ema20","EMA 20"),("ema50","EMA 50"),("bb","Bollinger")] %}
-                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#cfd6e0;cursor:pointer;">
-                            <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Panel</div>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        {% for key, label in [("rsi","RSI 14"),("macd","MACD")] %}
-                        <label style="display:flex;align-items:center;gap:5px;font-size:13px;color:#cfd6e0;cursor:pointer;">
-                            <input type="checkbox" name="ind" value="{{ key }}" {{ 'checked' if key in active_indicators }}>{{ label }}
-                        </label>
-                        {% endfor %}
-                    </div>
-                    {# funds publish one daily price, so anything needing highs, lows
-                       or volume (Supertrend, S/R, VWAP, ATR, ADX, OBV) can't apply #}
-                    <div style="font-size:11px;color:#5a6779;margin-top:8px;">{{ t.fund_ind_note }}</div>
-                </div>
-            </div>
-        </div>
     </form>
     <div class="chart-container"><div id="lw-fund"></div></div>
-    <div class="chart-panels chart-panels-full"><div id="lw-fund-panels"></div></div>
     <script src="{{ static_v('lightweight-charts.js') }}"></script>
     <script src="{{ static_v('charts.js') }}"></script>
     <script>
@@ -152,7 +117,7 @@
     }
     BDCharts.buildFund({
         url: {{ ("/api/fon/" ~ kod ~ "?" ~ request.query_string.decode()) | tojson }},
-        el: "lw-fund", panels: "lw-fund-panels", height: 420
+        el: "lw-fund", height: 420
     }).catch(function(e){ console.error("fund chart:", e); });
     </script>
 </div>

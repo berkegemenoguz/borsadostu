@@ -172,8 +172,7 @@ def fon_detay_sayfa(kod):
     kod = kod.upper()
     veri = fon_detay(kod)
     return render_template("fon_detay.html", kod=kod, veri=veri,
-                           start=request.args.get("start", ""),
-                           active_indicators=request.args.getlist("ind"))
+                           start=request.args.get("start", ""))
 
 
 @app.route("/api/fon/<kod>")
@@ -183,7 +182,7 @@ def api_fon(kod):
         df = fon_gecmis(kod.upper(), request.args.get("start") or None)
         if df is None or df.empty:
             return {"error": g.t["data_unavailable"]}, 200
-        return fund_payload(df, request.args.getlist("ind"))
+        return fund_payload(df)
     except Exception as e:
         app.logger.warning("Fund chart failed for %s: %s", kod, e)
         return {"error": g.t["data_unavailable"]}, 200
