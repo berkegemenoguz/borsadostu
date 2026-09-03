@@ -130,6 +130,7 @@
             panels: "lw-panels",
             type: {{ chart_type | tojson }},
             split: {{ 'true' if split else 'false' }},
+            toolLabels: {fib: "Fib", trend: {{ t.tool_trend | tojson }}, clear: {{ t.tool_clear | tojson }}},
             mainHeight: {{ 460 if split else 520 }}
         }).catch(function(e){ console.error("chart:", e); });
         </script>

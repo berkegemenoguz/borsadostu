@@ -30,7 +30,7 @@ def _times(df):
     return [int(ts.timestamp()) for ts in df.index]
 
 
-def _series(df, values, dashed=False):
+def _series(df, values, digits=4):
     """Bare value list aligned to the shared time axis; None marks a gap.
 
     Every series shares one timestamp array sent once at the top level — with a
@@ -44,7 +44,7 @@ def _series(df, values, dashed=False):
         except (TypeError, ValueError):
             out.append(None)
             continue
-        out.append(None if (math.isnan(f) or math.isinf(f)) else round(f, 4))
+        out.append(None if (math.isnan(f) or math.isinf(f)) else round(f, digits))
     return out
 
 
@@ -57,18 +57,20 @@ def _true_range(df):
 
 
 def candles(df):
+    # Same NaN care as _series: one NaN anywhere makes the whole JSON payload
+    # unparseable in the browser.
     return {
-        "o": [round(float(v), 4) for v in df["Open"]],
-        "h": [round(float(v), 4) for v in df["High"]],
-        "l": [round(float(v), 4) for v in df["Low"]],
-        "c": [round(float(v), 4) for v in df["Close"]],
+        "o": _series(df, df["Open"]),
+        "h": _series(df, df["High"]),
+        "l": _series(df, df["Low"]),
+        "c": _series(df, df["Close"]),
     }
 
 
 def volume(df):
     # The client colours each bar from the close direction, so no per-bar colour
     # string has to travel.
-    return [float(v) for v in df["Volume"]]
+    return _series(df, df["Volume"], digits=0)
 
 
 def supertrend(df, period=10, mult=3.0):
@@ -296,10 +298,12 @@ def fund_payload(df, selected=None):
     """Fund price series plus whichever close-based indicators were asked for."""
     selected = selected or []
     price = pd.DataFrame({"Close": df["Price"]}, index=df.index)
+    # NaN is not valid JSON, and a single one makes the browser's JSON.parse
+    # reject the whole payload — funds routinely have gaps in FundSize.
     out = {
         "times": _times(df),
-        "line": [round(float(v), 6) for v in df["Price"]],
-        "size": [float(v) for v in df["FundSize"]] if "FundSize" in df else [],
+        "line": _series(df, df["Price"], digits=6),   # unit prices run to six places
+        "size": _series(df, df["FundSize"]) if "FundSize" in df else [],
         "overlays": overlays(price, [i for i in selected if i in FUND_OVERLAY_INDS]),
         "panels": panels(price, [i for i in selected if i in FUND_PANEL_INDS]),
     }

@@ -117,6 +117,8 @@ TRANSLATIONS = {
         "ytd_short": "YTD",
         "funds_nav": "Funds",
         "fund_ind_note": "Funds publish one daily price, so indicators needing highs, lows or volume are unavailable.",
+        "tool_trend": "Trend",
+        "tool_clear": "Clear",
     },
     "tr": {
         "site_name": "Borsa Dostu",
@@ -236,5 +238,7 @@ TRANSLATIONS = {
         "ytd_short": "YBB",
         "funds_nav": "Fonlar",
         "fund_ind_note": "Fonlar günde tek fiyat açıklar; yüksek/düşük veya hacim gerektiren göstergeler uygulanamaz.",
+        "tool_trend": "Trend",
+        "tool_clear": "Temizle",
     },
 }
