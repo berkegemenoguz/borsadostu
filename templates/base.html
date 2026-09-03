@@ -220,6 +220,16 @@
            charts, which fed back into another redraw and stalled the page. */
         .chart-split > .chart-container { flex: 0 0 calc(50% - 10px); min-width: 0;
             margin-top: 0; overflow: hidden; border: 1px solid #1a2230; }
+        /* Drawing tools, floating over the chart's top-left corner. */
+        .chart-tools { position: absolute; top: 8px; left: 10px; z-index: 3;
+            display: flex; gap: 6px; }
+        .chart-tools button { padding: 5px 10px; font-size: 11px; font-family: inherit;
+            color: #8a98ab; background: rgba(12,18,27,0.85); border: 1px solid #1a2230;
+            cursor: pointer; }
+        .chart-tools button:hover { color: #eef2f7; border-color: #2a3444; }
+        .chart-tools button.on { color: #05080d; background: #ffab00; border-color: #ffab00;
+            font-weight: 700; }
+
         .fund-tabs { display: flex; gap: 8px; }
         .fund-tabs .ft { padding: 9px 14px; font-size: 13px; color: #8a98ab;
             border: 1px solid #1a2230; background: #0c121b; white-space: nowrap; }

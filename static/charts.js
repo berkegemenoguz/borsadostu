@@ -94,6 +94,128 @@
         });
     }
 
+    /* Drawing tools.
+
+       lightweight-charts ships no drawing layer, so shapes live in a canvas
+       stacked over the chart. Points are stored as (time, price) — never as
+       pixels — and re-projected through the chart's own converters on every
+       pan, zoom and resize, which is what keeps them pinned to the data. */
+    var FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+    var FIB_COLORS = ["#9e9e9e", "#f44336", "#ff9800", "#ffeb3b", "#4caf50", "#2196f3", "#9e9e9e"];
+
+    function attachTools(host, chart, series, t) {
+        t = t || {};
+        host.style.position = "relative";
+
+        var cv = document.createElement("canvas");
+        cv.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:2";
+        host.appendChild(cv);
+        var ctx = cv.getContext("2d");
+
+        var bar = document.createElement("div");
+        bar.className = "chart-tools";
+        bar.innerHTML =
+            '<button type="button" data-m="fib">' + (t.fib || "Fib") + "</button>" +
+            '<button type="button" data-m="trend">' + (t.trend || "Trend") + "</button>" +
+            '<button type="button" data-m="clear">' + (t.clear || "Clear") + "</button>";
+        host.appendChild(bar);
+
+        var shapes = [], picks = [], mode = null;
+
+        function fit() {
+            var r = host.getBoundingClientRect();
+            var dpr = window.devicePixelRatio || 1;
+            cv.width = r.width * dpr;
+            cv.height = r.height * dpr;
+            cv.style.width = r.width + "px";
+            cv.style.height = r.height + "px";
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            return r;
+        }
+
+        function xy(time, price) {
+            var x = chart.timeScale().timeToCoordinate(time);
+            var y = series.priceToCoordinate(price);
+            return (x === null || y === null) ? null : { x: x, y: y };
+        }
+
+        function label(text, x, y, colour) {
+            ctx.font = "10px ui-monospace, monospace";
+            var w = ctx.measureText(text).width + 6;
+            ctx.fillStyle = "rgba(12,18,27,0.85)";
+            ctx.fillRect(x, y - 11, w, 13);
+            ctx.fillStyle = colour;
+            ctx.fillText(text, x + 3, y - 1);
+        }
+
+        function draw() {
+            var r = fit();
+            ctx.clearRect(0, 0, r.width, r.height);
+            shapes.forEach(function (s) {
+                if (s.kind === "trend") {
+                    var a = xy(s.a.time, s.a.price), b = xy(s.b.time, s.b.price);
+                    if (!a || !b) return;
+                    ctx.strokeStyle = "#4fc3f7";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                    return;
+                }
+                // fib: levels between the two picked prices, spanning the pane
+                var hi = Math.max(s.a.price, s.b.price);
+                var lo = Math.min(s.a.price, s.b.price);
+                ctx.setLineDash([4, 3]);
+                ctx.lineWidth = 1.5;
+                FIB_LEVELS.forEach(function (lv, i) {
+                    var price = hi - (hi - lo) * lv;
+                    var y = series.priceToCoordinate(price);
+                    if (y === null) return;
+                    ctx.strokeStyle = FIB_COLORS[i];
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(r.width, y);
+                    ctx.stroke();
+                    label((lv * 100).toFixed(1) + "% " + price.toFixed(2), 4, y, FIB_COLORS[i]);
+                });
+                ctx.setLineDash([]);
+            });
+        }
+
+        function setMode(m) {
+            mode = m;
+            picks = [];
+            Array.prototype.forEach.call(bar.children, function (b) {
+                b.classList.toggle("on", b.dataset.m === m);
+            });
+        }
+
+        bar.addEventListener("click", function (e) {
+            var b = e.target.closest("button");
+            if (!b) return;
+            if (b.dataset.m === "clear") { shapes = []; setMode(null); draw(); return; }
+            setMode(mode === b.dataset.m ? null : b.dataset.m);
+        });
+
+        chart.subscribeClick(function (param) {
+            if (!mode || !param.time || !param.point) return;
+            var price = series.coordinateToPrice(param.point.y);
+            if (price === null) return;
+            picks.push({ time: param.time, price: price });
+            if (picks.length === 2) {
+                shapes.push({ kind: mode, a: picks[0], b: picks[1] });
+                setMode(null);
+                draw();
+            }
+        });
+
+        chart.timeScale().subscribeVisibleLogicalRangeChange(draw);
+        window.addEventListener("resize", draw);
+        draw();
+        return { redraw: draw };
+    }
+
     /* Price chart: candles (or a line/area) with volume tucked underneath. */
     function buildPrice(el, data, opts) {
         opts = opts || {};
@@ -140,7 +262,9 @@
         }
 
         chart.timeScale().fitContent();
-        return { chart: chart, series: main };
+        var out = { chart: chart, series: main };
+        if (opts.tools) { out.tools = attachTools(el, chart, main, opts.toolLabels); }
+        return out;
     }
 
     /* Oscillators, one pane each, in a single chart below the price charts. */
@@ -276,6 +400,7 @@
                         made.push(buildPrice(document.getElementById(cfg.main), data, {
                             type: cfg.type, height: cfg.mainHeight,
                             overlays: !cfg.split,        // together mode draws them here
+                            tools: true, toolLabels: cfg.toolLabels,
                         }));
                     }
                     if (cfg.overlay) {
