@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, make_response, g, url_for
 from bist import bist_sirketler, bist_detay_veri, bist_ticker_veri, bist_top_movers, bist_xu100, bist_fundamentals
 from viop import viop_ozet_veri, viop_detay_veri, kontrat_tarih_araligi
 from graphicgenerator import _fetch_history
-from indicators import chart_payload, summary
+from indicators import chart_payload, summary, fund_payload
+from fon import fon_listesi, fon_detay, fon_gecmis, FUND_TYPES
 from rates import get_rates
 from translations import TRANSLATIONS
 from concurrent.futures import ThreadPoolExecutor
@@ -153,6 +154,38 @@ def api_chart(sembol):
         return chart_payload(df, request.args.getlist("ind"))
     except Exception as e:
         app.logger.warning("Chart data failed for %s: %s", sembol, e)
+        return {"error": g.t["data_unavailable"]}, 200
+
+
+@app.route("/fon")
+def fon():
+    tur = request.args.get("tur", "YAT")
+    if tur not in FUND_TYPES:
+        tur = "YAT"
+    rows = fon_listesi(tur)
+    return render_template("fon.html", fonlar=rows, count=len(rows),
+                           tur=tur, fund_types=FUND_TYPES)
+
+
+@app.route("/fon/<kod>")
+def fon_detay_sayfa(kod):
+    kod = kod.upper()
+    veri = fon_detay(kod)
+    return render_template("fon_detay.html", kod=kod, veri=veri,
+                           start=request.args.get("start", ""),
+                           active_indicators=request.args.getlist("ind"))
+
+
+@app.route("/api/fon/<kod>")
+def api_fon(kod):
+    """Fund price history in the same shape the canvas charts already read."""
+    try:
+        df = fon_gecmis(kod.upper(), request.args.get("start") or None)
+        if df is None or df.empty:
+            return {"error": g.t["data_unavailable"]}, 200
+        return fund_payload(df, request.args.getlist("ind"))
+    except Exception as e:
+        app.logger.warning("Fund chart failed for %s: %s", kod, e)
         return {"error": g.t["data_unavailable"]}, 200
 
 

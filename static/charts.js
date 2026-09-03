@@ -210,7 +210,62 @@
         });
     }
 
+    /* Funds price once a day, so there is no OHLC to draw — an area line for
+       the unit price with fund size underneath. */
+    function buildFund(el, data, opts) {
+        var chart = LWC.createChart(el, baseOptions((opts && opts.height) || 420, el));
+        var times = data.times;
+
+        var price = chart.addSeries(LWC.AreaSeries, {
+            lineColor: "#54d6ff", lineWidth: 2,
+            topColor: "rgba(84,214,255,0.22)", bottomColor: "rgba(84,214,255,0.02)",
+            priceFormat: { type: "price", precision: 6, minMove: 0.000001 },
+        });
+        price.setData(toLine(times, data.line));
+
+        if (data.size && data.size.length) {
+            var size = chart.addSeries(LWC.HistogramSeries, {
+                priceFormat: { type: "volume" },
+                priceScaleId: "size",
+                color: "rgba(138,152,171,0.35)",
+                lastValueVisible: false, priceLineVisible: false,
+            });
+            chart.priceScale("size").applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
+            size.setData(toLine(times, data.size));
+        }
+
+        if (data.overlays) { addLines(chart, times, data.overlays.lines); }
+
+        chart.timeScale().fitContent();
+        return { chart: chart, series: price };
+    }
+
     window.BDCharts = {
+        buildFund: function (cfg) {
+            return fetch(cfg.url)
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.error) throw new Error(data.error);
+                    var made = [buildFund(document.getElementById(cfg.el), data, cfg)];
+                    if (cfg.panels) {
+                        var host = document.getElementById(cfg.panels);
+                        var built = buildPanels(host, data);
+                        made.push(built);
+                        if (!built && host && host.parentElement) {
+                            host.parentElement.classList.add("is-empty");
+                        }
+                    }
+                    sync(made);
+                    window.addEventListener("resize", function () {
+                        made.forEach(function (m) {
+                            if (!m) return;
+                            var host = m.chart.chartElement().parentElement;
+                            if (host) m.chart.applyOptions({ width: host.clientWidth });
+                        });
+                    });
+                    return made;
+                });
+        },
         build: function (cfg) {
             return fetch(cfg.url)
                 .then(function (r) { return r.json(); })

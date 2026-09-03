@@ -3,7 +3,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 _rates_cache = {"data": None, "time": 0}
-CACHE_TTL = 300
+CACHE_TTL = 600   # home-page figures; see HOME_TTL in bist.py
 
 
 def _fetch_tcmb():

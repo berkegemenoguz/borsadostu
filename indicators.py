@@ -285,6 +285,27 @@ def summary(df, interval="5m"):
     }
 
 
+# Funds publish a single daily unit price — no OHLC and no volume — so only the
+# close-based indicators apply. Supertrend, S/R and ATR/ADX need highs and lows;
+# VWAP and OBV need volume.
+FUND_OVERLAY_INDS = {"sma20", "sma50", "sma200", "ema20", "ema50", "bb"}
+FUND_PANEL_INDS = {"rsi", "macd"}
+
+
+def fund_payload(df, selected=None):
+    """Fund price series plus whichever close-based indicators were asked for."""
+    selected = selected or []
+    price = pd.DataFrame({"Close": df["Price"]}, index=df.index)
+    out = {
+        "times": _times(df),
+        "line": [round(float(v), 6) for v in df["Price"]],
+        "size": [float(v) for v in df["FundSize"]] if "FundSize" in df else [],
+        "overlays": overlays(price, [i for i in selected if i in FUND_OVERLAY_INDS]),
+        "panels": panels(price, [i for i in selected if i in FUND_PANEL_INDS]),
+    }
+    return out
+
+
 def chart_payload(df, selected=None):
     """Everything the browser needs to draw the three charts."""
     selected = selected or []

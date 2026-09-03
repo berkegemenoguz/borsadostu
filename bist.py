@@ -2,7 +2,7 @@ import borsapy as bp
 import pandas as pd
 import logging
 import time
-from borsa_limit import guarded
+from borsa_limit import guarded, guarded_bulk
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor
 from graphicgenerator import grafik_ciz_html
@@ -19,6 +19,11 @@ TOP_MOVERS_SYMBOLS = [
 _ticker_cache = {"data": [], "time": 0}
 _movers_cache = {"data": [], "time": 0}
 CACHE_TTL = 300
+# Home-page figures are on their own knob so their freshness can be traded
+# against refresh cost without touching detail pages, where a visitor is reading
+# the quote directly. Set above the warming cron's 5-minute interval so expiry
+# lands on every second ping — the bot pays the refresh, not the first visitor.
+HOME_TTL = 600
 # Movers report a 7-day change over 30 symbols — by far the heaviest fetch on
 # the home page, and a weekly metric gains nothing from 5-minute refreshes.
 MOVERS_TTL = 3600
@@ -41,8 +46,8 @@ def _cache_put(cache, key, data, now):
 def _fetch_one(sym):
     for attempt in range(2):
         try:
-            info = guarded(lambda: bp.Ticker(sym).info)
-            guarded(info.get, "last")
+            info = guarded_bulk(lambda: bp.Ticker(sym).info)
+            guarded_bulk(info.get, "last")
             return {"symbol": sym, "price": f"{info.get('last', 0):.2f}",
                     "change": info.get("change_percent", 0),
                     "pos": info.get("change_percent", 0) >= 0}
@@ -54,7 +59,7 @@ def _fetch_one(sym):
 
 def bist_ticker_veri():
     now = time.time()
-    if _ticker_cache["data"] and (now - _ticker_cache["time"]) < CACHE_TTL:
+    if _ticker_cache["data"] and (now - _ticker_cache["time"]) < HOME_TTL:
         return _ticker_cache["data"]
     with ThreadPoolExecutor(max_workers=6) as pool:
         results = list(pool.map(_fetch_one, TICKER_SYMBOLS))
@@ -66,7 +71,7 @@ def bist_ticker_veri():
         if len(_ticker_cache["data"]) > len(items):
             return _ticker_cache["data"]
         _ticker_cache["data"] = items
-        _ticker_cache["time"] = now - CACHE_TTL + 30  # retry in ~30s
+        _ticker_cache["time"] = now - HOME_TTL + 30  # retry in ~30s
         return items
 
     _ticker_cache["data"] = items
@@ -89,7 +94,7 @@ def _spark_points(closes, width=60, height=20, pad=2):
 def _fetch_weekly_change(sym):
     try:
         t = bp.Ticker(sym)
-        df = guarded(t.history, period="5g", interval="1d")
+        df = guarded_bulk(t.history, period="5g", interval="1d")
         if df.empty or len(df) < 2:
             return None
         closes = df["Close"].tolist()
@@ -140,7 +145,7 @@ _xu100_cache = {"data": None, "time": 0}
 
 def bist_xu100():
     now = time.time()
-    if _xu100_cache["data"] and (now - _xu100_cache["time"]) < CACHE_TTL:
+    if _xu100_cache["data"] and (now - _xu100_cache["time"]) < HOME_TTL:
         return _xu100_cache["data"]
     try:
         t = bp.Ticker("XU100")
