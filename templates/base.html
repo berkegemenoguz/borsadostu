@@ -220,6 +220,22 @@
            charts, which fed back into another redraw and stalled the page. */
         .chart-split > .chart-container { flex: 0 0 calc(50% - 10px); min-width: 0;
             margin-top: 0; overflow: hidden; border: 1px solid #1a2230; }
+        /* Where a fund sits among its category peers: best on the left. */
+        .rank-head { display: flex; justify-content: space-between; align-items: baseline;
+            margin-bottom: 12px; }
+        .rank-cat { color: #8a98ab; font-size: 14px; }
+        .rank-num { font-family: var(--mono, 'SF Mono', monospace); color: #8a98ab; font-size: 14px; }
+        .rank-num b { color: #eef2f7; font-size: 20px; }
+        .rank-track { position: relative; height: 10px;
+            background: linear-gradient(90deg, #2ad07f 0%, #ffb547 55%, #ff4d5e 100%);
+            opacity: .85; }
+        .rank-marker { position: absolute; top: -4px; width: 3px; height: 18px;
+            background: #eef2f7; transform: translateX(-1px);
+            box-shadow: 0 0 0 2px #0c121b; }
+        .rank-foot { display: flex; justify-content: space-between; margin-top: 8px;
+            font-size: 11px; color: #5a6779; }
+        .rank-pct { color: #eef2f7; font-weight: 700; }
+
         /* Drawing tools, floating over the chart's top-left corner. */
         .chart-tools { position: absolute; top: 8px; left: 10px; z-index: 3;
             display: flex; gap: 6px; }

@@ -347,17 +347,6 @@
         });
         price.setData(toLine(times, data.line));
 
-        if (data.size && data.size.length) {
-            var size = chart.addSeries(LWC.HistogramSeries, {
-                priceFormat: { type: "volume" },
-                priceScaleId: "size",
-                color: "rgba(138,152,171,0.35)",
-                lastValueVisible: false, priceLineVisible: false,
-            });
-            chart.priceScale("size").applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
-            size.setData(toLine(times, data.size));
-        }
-
         if (data.overlays) { addLines(chart, times, data.overlays.lines); }
 
         chart.timeScale().fitContent();
@@ -371,14 +360,6 @@
                 .then(function (data) {
                     if (data.error) throw new Error(data.error);
                     var made = [buildFund(document.getElementById(cfg.el), data, cfg)];
-                    if (cfg.panels) {
-                        var host = document.getElementById(cfg.panels);
-                        var built = buildPanels(host, data);
-                        made.push(built);
-                        if (!built && host && host.parentElement) {
-                            host.parentElement.classList.add("is-empty");
-                        }
-                    }
                     sync(made);
                     window.addEventListener("resize", function () {
                         made.forEach(function (m) {

@@ -301,7 +301,10 @@ def fund_payload(df):
     return {
         "times": _times(df),
         "line": _series(df, df["Price"], digits=6),   # unit prices run to six places
-        "size": _series(df, df["FundSize"]) if "FundSize" in df else [],
+        # borsapy returns FundSize/Investors columns but leaves them empty since
+        # the 2026-04 TEFAS migration, so there is no flow history to chart. The
+        # current values still arrive via Fund.info and are shown on the page.
+        "size": _series(df, df["FundSize"], digits=0) if "FundSize" in df else [],
     }
 
 

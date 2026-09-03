@@ -53,6 +53,22 @@
     {% endif %}
 </div>
 
+{% if veri.risk %}
+{% set rk = veri.risk %}
+<div class="card">
+    <h2>{{ t.risk_metrics }}</h2>
+    <div class="info-grid">
+        {% for key, label in [('annualized_return',t.ann_return), ('annualized_volatility',t.volatility), ('sharpe_ratio','Sharpe'), ('sortino_ratio','Sortino'), ('max_drawdown',t.max_drawdown)] %}
+        {% set v = rk.get(key) %}
+        <div class="info-item">
+            <div class="label">{{ label }}</div>
+            <div class="value mono">{{ "%.2f"|format(v|float) if v is not none else '—' }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 {% if veri.performance %}
 {% set p = veri.performance %}
 <div class="card">
@@ -69,18 +85,25 @@
 </div>
 {% endif %}
 
-{% if veri.risk %}
-{% set rk = veri.risk %}
+{% if i.get('category_rank') and i.get('category_fund_count') %}
+{% set rank = i.get('category_rank') %}
+{% set total = i.get('category_fund_count') %}
+{# left edge is first place; the marker sits where this fund falls #}
+{% set pos = ((rank - 1) / (total - 1) * 100) if total > 1 else 0 %}
+{% set pct = (rank / total * 100) | round | int %}
 <div class="card">
-    <h2>{{ t.risk_metrics }}</h2>
-    <div class="info-grid">
-        {% for key, label in [('annualized_return',t.ann_return), ('annualized_volatility',t.volatility), ('sharpe_ratio','Sharpe'), ('sortino_ratio','Sortino'), ('max_drawdown',t.max_drawdown)] %}
-        {% set v = rk.get(key) %}
-        <div class="info-item">
-            <div class="label">{{ label }}</div>
-            <div class="value mono">{{ "%.2f"|format(v|float) if v is not none else '—' }}</div>
-        </div>
-        {% endfor %}
+    <h2>{{ t.category_rank }}</h2>
+    <div class="rank-head">
+        <span class="rank-cat">{{ i.get('category') or '—' }}</span>
+        <span class="rank-num"><b>{{ rank }}</b> / {{ total }}</span>
+    </div>
+    <div class="rank-track">
+        <div class="rank-marker" style="left:{{ '%.1f'|format(pos) }}%"></div>
+    </div>
+    <div class="rank-foot">
+        <span>{{ t.rank_best }}</span>
+        <span class="rank-pct">{{ t.rank_top }} %{{ pct }}</span>
+        <span>{{ t.rank_worst }}</span>
     </div>
 </div>
 {% endif %}

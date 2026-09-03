@@ -118,6 +118,9 @@ TRANSLATIONS = {
         "funds_nav": "Funds",
         "tool_trend": "Trend",
         "tool_clear": "Clear",
+        "rank_best": "Best in category",
+        "rank_worst": "Worst",
+        "rank_top": "Top",
     },
     "tr": {
         "site_name": "Borsa Dostu",
@@ -238,5 +241,8 @@ TRANSLATIONS = {
         "funds_nav": "Fonlar",
         "tool_trend": "Trend",
         "tool_clear": "Temizle",
+        "rank_best": "Kategorinin en iyisi",
+        "rank_worst": "En kötü",
+        "rank_top": "Üst",
     },
 }
