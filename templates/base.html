@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Borsa Dostu{% endblock %}</title>
-    {# Plotly is 4.5 MB and blocks rendering, so only chart pages pull it in
-       (bist_detay / viop_detay override this block). Pages without a chart —
-       home, BIST and VIOP lists — must never pay for it. #}
+    {# Kept for pages that need something in <head>; charts no longer use it —
+       they load lightweight-charts from static/ next to their own markup. #}
     {% block head_js %}{% endblock %}
     <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
     <style>
@@ -207,6 +206,9 @@
         .info-item .value { font-size: 18px; font-weight: 700; color: #000; margin-top: 4px; font-variant-numeric: tabular-nums; }
 
         .chart-container { width: 100%; min-height: 500px; margin-top: 16px; margin-left: 0; padding-left: 0; overflow-x: auto; }
+        /* Short charts (drawdown, panels) set their own height — the 500px floor
+           above is for the price chart and would leave dead space under them. */
+        .chart-container.is-short { min-height: 0; }
         .chart-container .js-plotly-plot { margin-left: 0 !important; }
         /* break out of the page container to use (most of) the monitor width,
            symmetrically centered so nothing gets clipped */
@@ -350,6 +352,7 @@
             .form-row .btn { width: 100%; }
 
             .chart-container { min-height: 350px; }
+            .chart-container.is-short { min-height: 0; }
             .chart-container .nsewdrag { touch-action: pan-y; }
 
             .info-grid { grid-template-columns: 1fr 1fr; }

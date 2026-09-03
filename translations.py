@@ -121,6 +121,8 @@ TRANSLATIONS = {
         "rank_best": "Best in category",
         "rank_worst": "Worst",
         "rank_top": "Top",
+        "drawdown": "Drawdown",
+        "drawdown_note": "How far the fund sits below its own peak — how deep the falls went and how long recovery took.",
     },
     "tr": {
         "site_name": "Borsa Dostu",
@@ -244,5 +246,7 @@ TRANSLATIONS = {
         "rank_best": "Kategorinin en iyisi",
         "rank_worst": "En kötü",
         "rank_top": "Üst",
+        "drawdown": "Zirveden Düşüş",
+        "drawdown_note": "Fonun kendi zirvesinin ne kadar altında olduğu — düşüşler ne kadar derindi, toparlanma ne kadar sürdü.",
     },
 }

@@ -298,9 +298,16 @@ def fund_payload(df):
     NaN is not valid JSON, and a single one makes the browser's JSON.parse
     reject the whole payload — funds routinely have gaps in FundSize.
     """
+    # How far below its own running peak the fund is at each point, in percent.
+    # Always <= 0, and the standard way to read a fund: how deep the falls went
+    # and how long it took to climb back.
+    peak = df["Price"].cummax()
+    drawdown = (df["Price"] / peak - 1) * 100
+
     return {
         "times": _times(df),
         "line": _series(df, df["Price"], digits=6),   # unit prices run to six places
+        "drawdown": _series(df, drawdown, digits=2),
         # borsapy returns FundSize/Investors columns but leaves them empty since
         # the 2026-04 TEFAS migration, so there is no flow history to chart. The
         # current values still arrive via Fund.info and are shown on the page.

@@ -353,6 +353,29 @@
         return { chart: chart, series: price };
     }
 
+    /* Underwater curve: distance below the running peak, always <= 0. A
+       baseline series anchored at zero fills downward, which is how a drawdown
+       is conventionally read. */
+    function buildDrawdown(el, data) {
+        if (!data.drawdown || !data.drawdown.length) return null;
+        var chart = LWC.createChart(el, baseOptions(180, el));
+        var s = chart.addSeries(LWC.BaselineSeries, {
+            baseValue: { type: "price", price: 0 },
+            bottomLineColor: "#ff4d5e",
+            bottomFillColor1: "rgba(255,77,94,0.05)",
+            bottomFillColor2: "rgba(255,77,94,0.35)",
+            topLineColor: "#ff4d5e",
+            topFillColor1: "rgba(255,77,94,0.05)",
+            topFillColor2: "rgba(255,77,94,0.05)",
+            lineWidth: 2,
+            priceFormat: { type: "percent" },
+            priceLineVisible: false,
+        });
+        s.setData(toLine(data.times, data.drawdown));
+        chart.timeScale().fitContent();
+        return { chart: chart };
+    }
+
     window.BDCharts = {
         buildFund: function (cfg) {
             return fetch(cfg.url)
@@ -360,6 +383,14 @@
                 .then(function (data) {
                     if (data.error) throw new Error(data.error);
                     var made = [buildFund(document.getElementById(cfg.el), data, cfg)];
+                    if (cfg.drawdown) {
+                        var host = document.getElementById(cfg.drawdown);
+                        var dd = buildDrawdown(host, data);
+                        made.push(dd);
+                        if (!dd && host && host.parentElement) {
+                            host.parentElement.classList.add("is-empty");
+                        }
+                    }
                     sync(made);
                     window.addEventListener("resize", function () {
                         made.forEach(function (m) {

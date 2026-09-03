@@ -140,9 +140,15 @@
     }
     BDCharts.buildFund({
         url: {{ ("/api/fon/" ~ kod ~ "?" ~ request.query_string.decode()) | tojson }},
-        el: "lw-fund", height: 420
+        el: "lw-fund", height: 420, drawdown: "lw-drawdown"
     }).catch(function(e){ console.error("fund chart:", e); });
     </script>
+</div>
+
+<div class="card">
+    <h2>{{ t.drawdown }}</h2>
+    <div style="color:#8a98ab;font-size:13px;margin:-6px 0 12px;">{{ t.drawdown_note }}</div>
+    <div class="chart-container is-short"><div id="lw-drawdown"></div></div>
 </div>
 {% endif %}
 {% endblock %}
